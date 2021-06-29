@@ -1,4 +1,4 @@
-//server.js
+// To set up server, change "start" field in package.json from "react-scripts start" to "node server.js"
 
 const express = require('express');
 const favicon = require('express-favicon');
@@ -15,4 +15,6 @@ app.get('/ping', function (req, res) {
 app.get('/*', function (req, res) {
   res.sendFile(path.join(__dirname, 'build', 'index.html'));
 });
-app.listen(port);
+app.listen(port, function(){
+  console.log("To access site locally, go to http://localhost:3000");
+})

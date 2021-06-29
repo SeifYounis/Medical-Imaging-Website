@@ -3,8 +3,6 @@ import dash_html_components as html
 
 import base64
 
-from dash_html_components.Div import Div
-
 app = dash.Dash(__name__)
 
 test_xray = "test_xray.png"
