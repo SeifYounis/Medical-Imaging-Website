@@ -1,0 +1,25 @@
+.header {
+    background:chartreuse;
+    height: 12vh
+}
+
+.afc-prompt {
+    font-size: 3vh;
+    text-align: center;
+    margin-top: 0;
+    position: relative;
+}
+
+#split-afc {
+    position: relative;
+    height: 87vh;
+    width: 50%; 
+}
+
+.left {
+    float: left;
+}
+
+.right {
+    float: right;
+}  
