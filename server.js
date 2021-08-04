@@ -11,7 +11,7 @@ require('dotenv').config()
 
 // Create connection
 const client = new Client({
-  connectionString: process.env.DATABASE_URL,
+  connectionString: process.env.REACT_APP_DATABASE_URL,
   ssl: {
     rejectUnauthorized: false,
   },
