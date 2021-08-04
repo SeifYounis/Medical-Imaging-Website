@@ -38,9 +38,9 @@ client.connect((err) => {
 // Used to interpret data that are sent from web pages in JSON format
 app.use(express.json())
 
-app.use(express.static('build'));
-
 // the __dirname is the current directory from where the script is running
+app.use(express.static(path.join(__dirname, 'build')));
+
 //app.use(express.static(__dirname));
 //app.use(express.static(path.join(__dirname, 'build')));
 //app.use(favicon(__dirname + '/build/favicon.ico'));
