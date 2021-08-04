@@ -62,7 +62,7 @@ app.post('/testing', function(req, res) {
   client.query(`INSERT INTO students(username, score) VALUES (\'${username}\', ${score})`, function(err, result) {
     if (err) throw err;
 
-    //client.end;
+    client.end();
   })
 
   // Do a MySQL query.
