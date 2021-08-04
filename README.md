@@ -1,4 +1,4 @@
-# Medical Imaging Evaluation Traininng
+# Medical Imaging Evaluation Training
  
 We would like to have two possible ways to run the course
 
