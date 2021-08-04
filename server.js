@@ -6,15 +6,21 @@ const path = require('path')
 const port = process.env.PORT || 3000;
 const app = express()
 const {Client} = require('pg')
+require('dotenv').config()
 //const mysql = require('mysql')
 
 // Create connection
-const db = mysql.createConnection({
-  host     : '192.168.1.204',
-  user     : 'test',
-  password : '/!A8Y05s3*D[VHMH',
-  database : 'reader study'
+const client = new Client({
+  connectionString: process.env.DATABASE_URL,
+  ssl: {
+    rejectUnauthorized: false,
+  },
 });
+
+client.connect((err) => {
+  if(err) throw err;
+  console.log('PostgreSQL Connected');
+})
 
 // Create connection
 // const db = mysql.createConnection({
@@ -51,7 +57,6 @@ app.post('/testing', function(req, res) {
   var score = user.score;
 
   console.log([username, score]);
-  console.log(`Changed username from \'${user.username}\' to \'${username}\'`)
 
   // Do a PostgreSQL query
   client.query(`INSERT INTO students(username, score) VALUES (\'${username}\', ${score})`, function(err, result) {

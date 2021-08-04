@@ -6,6 +6,7 @@
     "@testing-library/jest-dom": "^5.11.4",
     "@testing-library/react": "^11.1.0",
     "@testing-library/user-event": "^12.1.10",
+    "dotenv": "^10.0.0",
     "express": "^4.17.1",
     "express-favicon": "^2.0.1",
     "fetch": "^1.1.0",
@@ -24,7 +25,8 @@
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "launch": "react-scripts build && node server.js"
+    "launch": "react-scripts build && node server.js",
+    "heroku-postbuild": "curl -sf https://gobinaries.com/tj/node-prune | PREFIX=. sh&&./node-prune"
   },
   "eslintConfig": {
     "extends": [
