@@ -1,5 +1,5 @@
 import ReactDOM from 'react-dom';
-import App, {tick} from './App.js'
+import App from './App.js'
 import './index.css';
 import reportWebVitals from './reportWebVitals';
 

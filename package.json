@@ -2,15 +2,14 @@
   "name": "react_version",
   "version": "0.1.0",
   "private": true,
-  "description": "Web application of reader study perception test",
+  "description": "Web application of medical imaging reader study",
   "main": "server.js",
   "author": {
     "name": "Seif Younis",
     "email": "seifyounis23@gmail.com"
   },
   "engines": {
-    "node": "14.17.0",
-    "npm": "6.14.13"
+    "node": "14.17.0"
   },
   "dependencies": {
     "@testing-library/jest-dom": "^5.11.4",

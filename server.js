@@ -1,7 +1,6 @@
 // To set up server, change "start" field in package.json from "react-scripts start" to "node server.js"
 
 const express = require('express')
-const favicon = require('express-favicon')
 const path = require('path')
 const port = process.env.PORT || 3000;
 const app = express()
@@ -11,7 +10,7 @@ require('dotenv').config()
 
 // Create connection
 const client = new Client({
-  connectionString: process.env.REACT_APP_DATABASE_URL,
+  connectionString: process.env.DATABASE_URL,
   ssl: {
     rejectUnauthorized: false,
   },
@@ -36,13 +35,16 @@ client.connect((err) => {
 //   console.log('MySql Connected...');
 // });
 
-// the __dirname is the current directory from where the script is running
-app.use(express.static(__dirname));
-app.use(express.static(path.join(__dirname, 'build')));
-app.use(favicon(__dirname + '/build/favicon.ico'));
-
 // Used to interpret data that are sent from web pages in JSON format
 app.use(express.json())
+
+app.use(express.static('build'));
+
+// the __dirname is the current directory from where the script is running
+//app.use(express.static(__dirname));
+//app.use(express.static(path.join(__dirname, 'build')));
+//app.use(favicon(__dirname + '/build/favicon.ico'));
+
 
 app.get('/*', function (req, res) {
   res.sendFile(path.join(__dirname, 'build', 'index.html'));
@@ -62,7 +64,7 @@ app.post('/testing', function(req, res) {
   client.query(`INSERT INTO students(username, score) VALUES (\'${username}\', ${score})`, function(err, result) {
     if (err) throw err;
 
-    client.end();
+    //client.end();
   })
 
   // Do a MySQL query.
