@@ -1,5 +1,7 @@
 // To set up server, change "start" field in package.json from "react-scripts start" to "node server.js"
 
+// "heroku-postbuild": "curl -sf https://gobinaries.com/tj/node-prune | PREFIX=. sh&&./node-prune"
+
 const express = require('express')
 const path = require('path')
 const port = process.env.PORT || 3000;
@@ -38,14 +40,12 @@ client.connect((err) => {
 // Used to interpret data that are sent from web pages in JSON format
 app.use(express.json())
 
-// the __dirname is the current directory from where the script is running
-app.use(express.static(path.join(__dirname, 'build')));
-
 //app.use(express.static(__dirname));
 //app.use(express.static(path.join(__dirname, 'build')));
 //app.use(favicon(__dirname + '/build/favicon.ico'));
 
-
+// the __dirname is the current directory from where the script is running
+app.use(express.static(path.join(__dirname, 'build')));
 app.get('/*', function (req, res) {
   res.sendFile(path.join(__dirname, 'build', 'index.html'));
 });
