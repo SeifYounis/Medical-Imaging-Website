@@ -3,8 +3,8 @@
  */
 
 import React from 'react'
-import './testing.css'
-import './timer.css'
+import '../styles/testing.css'
+import '../styles/timer.css'
 import { fadeOutAndfadeIn } from '../assets/fading animation'
 import test_xray from '../images/SImage326303.jpg'
 import puppy from '../images/puppy.png'
@@ -32,24 +32,15 @@ let remainingPathColor = COLOR_CODES.info.color;
 
 // Initially, no time has passed, but this will count up
 // and subtract from the TIME_LIMIT
-let timePassed = 0;
 let timeLeft = TIME_LIMIT;
 let timerInterval = null;
 
 function formatTime(time) {
-    // The largest round integer less than or equal to the result of time divided being by 60.
-    const minutes = Math.floor(time / 60);
-
     // Seconds are the remainder of the time divided by 60 (modulus operator)
     let seconds = time % 60;
 
-    // If the value of seconds is less than 10, then display seconds with a leading zero
-    if (seconds < 10) {
-        seconds = `0${seconds}`;
-    }
-
-    // The output in MM:SS format
-    return `${minutes}:${seconds}`;
+    // Output seconds remaining
+    return `${seconds}`;
 }
 
 // Divides time left by the defined time limit.
@@ -69,25 +60,25 @@ function setCircleDasharray() {
 }
 
 function setRemainingPathColor(timeLeft) {
-    const { alert, warning, info } = COLOR_CODES;
+    const {alert, warning, info} = COLOR_CODES;
   
-    // If the remaining time is less than or equal to 5, remove the "warning" class and apply the "alert" class.
+    // If the remaining time is less than or equal to 3, change the color on the timer to red
     if (timeLeft <= alert.threshold) {
       document
         .getElementById("base-timer-path-remaining")
-        .classList.remove(warning.color);
-      document
-        .getElementById("base-timer-path-remaining")
-        .classList.add(alert.color);
+        .setAttribute("color", alert.color);
   
-    // If the remaining time is less than or equal to 10, remove the base color and apply the "warning" class.
+    // If the remaining time is less than or equal to 7, change the color on the timer to yellow
     } else if (timeLeft <= warning.threshold) {
       document
         .getElementById("base-timer-path-remaining")
-        .classList.remove(info.color);
-      document
+        .setAttribute("color", warning.color);
+
+    // If time remaining is greater than 7, timer color should be green
+    } else {
+        document
         .getElementById("base-timer-path-remaining")
-        .classList.add(warning.color);
+        .setAttribute("color", info.color);
     }
 }
 
@@ -101,11 +92,12 @@ function processSelection() {
 
     fadeOutAndfadeIn(image, puppy);
 
-    timePassed = 0;
     startTimer();
 }
 
 function startTimer() {
+    let timePassed = 0;
+
     timerInterval = setInterval(() => {
         document.getElementById("image-button").onclick = processSelection;
         document.getElementById("no-button").onclick = processSelection;
