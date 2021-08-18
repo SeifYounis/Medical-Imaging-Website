@@ -1,79 +1,91 @@
 // To set up server, change "start" field in package.json from "react-scripts start" to "node server.js"
 
-// "heroku-postbuild": "curl -sf https://gobinaries.com/tj/node-prune | PREFIX=. sh&&./node-prune"
+// To see heroku console output, do heroku logs --tail
 
 const express = require('express')
+const session = require('express-session')
 const path = require('path')
 const port = process.env.PORT || 3000;
 const app = express()
 const {Client} = require('pg')
+const lms = require('./src/assets/lms.js')
 require('dotenv').config()
-//const mysql = require('mysql')
 
-// Create connection
-const client = new Client({
-  connectionString: process.env.DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false,
-  },
-});
+global.sess = {};
 
-client.connect((err) => {
-  if(err) throw err;
-  console.log('PostgreSQL Connected');
-})
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'dev',
+  resave: false,
+  saveUninitialized: true,
+}));
 
-// Create connection
-// const db = mysql.createConnection({
-//   host     : 'localhost',
-//   user     : 'root',
-//   password : '/!A8Y05s3*D[VHMH',
-//   database : 'reader study'
-// });
-
-// Connect
-// db.connect((err) => {
-//   if(err) throw err;
-//   console.log('MySql Connected...');
-// });
-
-// Used to interpret data that are sent from web pages in JSON format
+// Used to parse request data that sent from web pages in JSON format
 app.use(express.json())
-
-//app.use(express.static(__dirname));
-//app.use(express.static(path.join(__dirname, 'build')));
-//app.use(favicon(__dirname + '/build/favicon.ico'));
+app.use(express.urlencoded({extended: false}))
 
 // the __dirname is the current directory from where the script is running
+app.use(express.static(path.join(__dirname, 'static')));
+app.get('/', function(req, res) {
+  res.sendFile(path.join(__dirname, 'static', 'main.html'))  
+})
+
 app.use(express.static(path.join(__dirname, 'build')));
-app.get('/*', function (req, res) {
+app.get(/[a-z]+/, function (req, res) {
   res.sendFile(path.join(__dirname, 'build', 'index.html'));
 });
 
+app.post('/application', function(req, res) {
+  var provider = global.sess.provider;
+
+  if(provider.outcome_service) {
+    provider.outcome_service.send_replace_result(parseFloat(req.body.score), (err, result) => {
+      console.log("Graded")
+    })
+  }
+})
+
 app.post('/testing', function(req, res) {
   // Get sent data.
-  var user = req.body;
+  // var user = req.body;
 
-  // Scrub username input of single quotes bunched together to prevent SQL injection. Checkmake terrorists
-  var username = user.username.replace(/[\']+/, "\'\'");
-  var score = user.score;
+  // // Use pattern matching to scrub username input of single quotes bunched together to prevent SQL injection. Checkmake terrorists
+  // var username = user.username.replace(/[\']+/, "\'\'");
+  // var score = user.score;
 
-  console.log([username, score]);
+  // console.log([username, score]);
 
-  // Do a PostgreSQL query
-  client.query(`INSERT INTO students(username, score) VALUES (\'${username}\', ${score})`, function(err, result) {
-    if (err) throw err;
-
-    //client.end();
-  })
-
-  // Do a MySQL query.
-  // db.query('INSERT INTO students SET ?', user, function(err, result) {
-  //   if (err) throw err;
+  // // Create connection
+  // const client = new Client({
+  //   connectionString: process.env.DATABASE_URL,
+  //   ssl: {
+  //     rejectUnauthorized: false,
+  //   },
   // });
-  
+
+  // client.connect((err) => {
+  //   if(err) throw err;
+  //   console.log('PostgreSQL Connected');
+  // })
+
+  // // Do a PostgreSQL query
+  // client.query(`INSERT INTO students(username, score) VALUES (\'${username}\', ${score})`, function(err, result) {
+  //   if (err) throw err;
+
+  //   client.end(function(err, result) {
+  //     if (err) throw err;
+
+  //     console.log("Connection to database ended")
+  //   });
+  // });
+
+  // client.query(`SELECT * FROM students`, function (err, result) {
+  //   if (err) throw err;
+  // })
+
   res.end('Success');
 });
+
+app.post('/launch', lms.handleLaunch);
 
 app.listen(port, function(){
   console.log( `Server is listening at http://localhost:${port}`);
