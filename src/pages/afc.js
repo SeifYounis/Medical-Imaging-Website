@@ -1,19 +1,19 @@
 import React from 'react'
 import test_xray from '../images/SImage326303.jpg'
 import puppy from '../images/puppy.png'
-import './afc.css'
+import '../styles/afc.css'
+
+document.addEventListener('keyup', (event) => {
+    if (event.key === "f" || event.key === "j") {
+        //document.getElementById("afc-prompt").innerHTML = "You pressed f or j";
+    }
+});
 
 class AlternateChoices extends React.Component {
-    // document.addEventListener('keyup', (event) => {
-    //     if (event.key == "f" || event.key == "j") {
-    //         document.getElementById("afc-prompt").innerHTML = "You pressed f or j";
-    //     }
-    // });
-
     render() {
         return (
             <body>
-                <div class="header">
+                <div class="header" id="afc-prompt">
                     <h1 class="afc-prompt part-1">
                         One of these images contains a signal. 
                         Click on the image you believe contains a signal. 
