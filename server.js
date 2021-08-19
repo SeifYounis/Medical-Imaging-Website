@@ -2,6 +2,74 @@
 
 // To see heroku console output, do heroku logs --tail
 
+// const https = require('https');
+// const fs = require('fs');
+// const url = require('url');
+// var qs = require('querystring');
+// var options = {};
+// var sslkey = '/etc/letsencrypt/live/lti.kno.nz/privkey.pem';
+
+// if(fs.existsSync(sslkey)) {  
+//   options = {    
+//     key: fs.readFileSync(sslkey),    
+//     cert: fs.readFileSync('/etc/letsencrypt/live/lti.kno.nz/fullchain.pem')  
+//   }
+// } else {  
+//   options = {    
+//     key: fs.readFileSync('./keys/star_netkno_nz.key'),
+//     cert: fs.readFileSync('./keys/star_netkno_nz_bundle.crt')  
+//   }
+// };
+
+// var lti = require('ims-lti');
+// var ltiKey = 'myschool.edu';
+// var ltiSecret = 'letmein';
+// var b = {};
+// https.createServer(options, (req, res) => {
+//             var q = url.parse(req.url, true);
+//             if (req.method === 'POST') {
+//                 let body = '';
+//                 req.on('data', chunk => {
+//                     body += chunk.toString();
+//                 });
+//                 req.on('end', () => {
+//                             b = qs.parse(body);
+//                             console.log(b);
+//                             var provider = new lti.Provider(ltiKey, ltiSecret);
+//                             provider.valid_request(req, b, function(err, isValid) {
+//                                         if (err) {
+//                                             console.log('Error in LTI Launch:' + err);
+//                                             res.end('Pre-Validation Error');
+//                                         } else {
+//                                             if (!isValid) {
+//                                                 console.log('\nError: Invalid LTI launch.');
+//                                                 res.end("Invalid LTI launch");
+//                                             } else {
+//                                                 var rettxt = 'User: ' + b.lis_person_sourcedid + ' (' + b.lis_person_name_full + ')\n' + 'Roles: ' + b.roles + '\n'; 
+//                                                 // var retback = '<a href="' + b.launch_presentation_return_url + '">Return</a>';            
+//                                                 var retback = '';            
+//                                                 if (provider.outcome_service) {              
+//                                                   // var score = Math.round( 100*Math.random() ) / 100;              
+//                                                   var score = Math.round( 10*Math.random() ) / 10;               
+//                                                   provider.outcome_service.send_replace_result(score, function(err, result) {                
+//                                                     console.log(result);              
+//                                                   });              
+//                                                   res.end(rettxt + 'Returning score: ' + score + '\n\n' + retback);            
+//                                                 }            
+//                                                 else {              
+//                                                   res.end(rettxt + 'No outcome service, no score return' + '\n\n' + retback);            
+//                                                 }          
+//                                               }        
+//                                             }      
+//                                           });    
+//                                         });  
+//                                       }  
+//                                       else {    
+//                                         res.end('Must be launched as an LTI tool provider.  Key/Secret: ' + ltiKey + '/' + ltiSecret);  
+//                                       }}).listen(8443)
+
+const https = require('https');
+const fs = require('fs');
 const express = require('express')
 const session = require('express-session')
 const path = require('path')
@@ -18,6 +86,11 @@ app.use(session({
   resave: false,
   saveUninitialized: true,
 }));
+
+var options = {    
+  key: fs.readFileSync('./keys/key.pem'),
+  cert: fs.readFileSync('./keys/cert.pem')  
+}
 
 // Used to parse request data that sent from web pages in JSON format
 app.use(express.json())
@@ -87,6 +160,10 @@ app.post('/testing', function(req, res) {
 
 app.post('/launch', lms.handleLaunch);
 
-app.listen(port, function(){
-  console.log( `Server is listening at http://localhost:${port}`);
-})
+https.createServer(options, app).listen(port, function(){
+  console.log(`Server is listening at http://localhost:${port}`);
+});
+
+// app.listen(port, function(){
+//   console.log( `Server is listening at http://localhost:${port}`);
+// })
