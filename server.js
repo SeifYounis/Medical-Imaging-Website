@@ -2,95 +2,59 @@
 
 // To see heroku console output, do heroku logs --tail
 
-// const https = require('https');
-// const fs = require('fs');
-// const url = require('url');
-// var qs = require('querystring');
-// var options = {};
-// var sslkey = '/etc/letsencrypt/live/lti.kno.nz/privkey.pem';
+// Query I used to make session database table
+// CREATE TABLE IF NOT EXISTS myschema.session (
+//   sid varchar NOT NULL COLLATE "default",
+//   sess json NOT NULL,
+//   expire timestamp(6) NOT NULL,
+//   CONSTRAINT "session_pkey" PRIMARY KEY ("sid")
+// );
+// CREATE INDEX IF NOT EXISTS "IDX_session_expire" ON myschema.session ("expire");
 
-// if(fs.existsSync(sslkey)) {  
-//   options = {    
-//     key: fs.readFileSync(sslkey),    
-//     cert: fs.readFileSync('/etc/letsencrypt/live/lti.kno.nz/fullchain.pem')  
-//   }
-// } else {  
-//   options = {    
-//     key: fs.readFileSync('./keys/star_netkno_nz.key'),
-//     cert: fs.readFileSync('./keys/star_netkno_nz_bundle.crt')  
-//   }
-// };
+require('dotenv').config()
 
-// var lti = require('ims-lti');
-// var ltiKey = 'myschool.edu';
-// var ltiSecret = 'letmein';
-// var b = {};
-// https.createServer(options, (req, res) => {
-//             var q = url.parse(req.url, true);
-//             if (req.method === 'POST') {
-//                 let body = '';
-//                 req.on('data', chunk => {
-//                     body += chunk.toString();
-//                 });
-//                 req.on('end', () => {
-//                             b = qs.parse(body);
-//                             console.log(b);
-//                             var provider = new lti.Provider(ltiKey, ltiSecret);
-//                             provider.valid_request(req, b, function(err, isValid) {
-//                                         if (err) {
-//                                             console.log('Error in LTI Launch:' + err);
-//                                             res.end('Pre-Validation Error');
-//                                         } else {
-//                                             if (!isValid) {
-//                                                 console.log('\nError: Invalid LTI launch.');
-//                                                 res.end("Invalid LTI launch");
-//                                             } else {
-//                                                 var rettxt = 'User: ' + b.lis_person_sourcedid + ' (' + b.lis_person_name_full + ')\n' + 'Roles: ' + b.roles + '\n'; 
-//                                                 // var retback = '<a href="' + b.launch_presentation_return_url + '">Return</a>';            
-//                                                 var retback = '';            
-//                                                 if (provider.outcome_service) {              
-//                                                   // var score = Math.round( 100*Math.random() ) / 100;              
-//                                                   var score = Math.round( 10*Math.random() ) / 10;               
-//                                                   provider.outcome_service.send_replace_result(score, function(err, result) {                
-//                                                     console.log(result);              
-//                                                   });              
-//                                                   res.end(rettxt + 'Returning score: ' + score + '\n\n' + retback);            
-//                                                 }            
-//                                                 else {              
-//                                                   res.end(rettxt + 'No outcome service, no score return' + '\n\n' + retback);            
-//                                                 }          
-//                                               }        
-//                                             }      
-//                                           });    
-//                                         });  
-//                                       }  
-//                                       else {    
-//                                         res.end('Must be launched as an LTI tool provider.  Key/Secret: ' + ltiKey + '/' + ltiSecret);  
-//                                       }}).listen(8443)
-
-const https = require('https');
-const fs = require('fs');
-const express = require('express')
-const session = require('express-session')
 const path = require('path')
 const port = process.env.PORT || 3000;
+
+const express = require('express')
+const session = require('express-session')
 const app = express()
-const {Client} = require('pg')
+
+const {Pool} = require('pg')
+const PostgreSQLStore = require('connect-pg-simple')(session);
 const lms = require('./src/assets/lms.js')
-require('dotenv').config()
 
 global.sess = {};
 
-app.use(session({
-  secret: process.env.SESSION_SECRET || 'dev',
-  resave: false,
-  saveUninitialized: true,
-}));
+// const pool = new Pool({
+//   connectionString: process.env.DATABASE_URL,
+//   ssl: {
+//     rejectUnauthorized: false
+//   }
+// })
 
-var options = {    
-  key: fs.readFileSync('./keys/key.pem'),
-  cert: fs.readFileSync('./keys/cert.pem')  
-}
+app.use(session({
+  secret: process.env.SESSION_SECRET,
+  saveUninitialized: false,
+  resave: false,
+}))
+
+// app.use(session({
+//   secret: process.env.SESSION_SECRET,
+//   saveUninitialized: false,
+//   resave: true,
+//   store: new PostgreSQLStore({
+//     conString: process.env.DATABASE_URL,
+//     pool: pool,
+//     schemaName: 'public',
+//     tableName: 'session'
+//   }),
+//   cookie: {
+//     sameSite: 'Lax',
+//     maxAge: 7 * 24 * 60 * 60 * 1000, // 1 week
+//     secure: false
+//   }
+// }))
 
 // Used to parse request data that sent from web pages in JSON format
 app.use(express.json())
@@ -115,7 +79,17 @@ app.post('/application', function(req, res) {
       console.log("Graded")
     })
   }
+
+  // var provider = req.session.provider;
+
+  // if(provider.outcome_service) {
+  //   provider.outcome_service.send_replace_result(parseFloat(req.body.score), (err, result) => {
+  //     console.log("Graded")
+  //   })
+  // }
 })
+
+app.post('/launch', lms.handleLaunch);
 
 app.post('/testing', function(req, res) {
   // Get sent data.
@@ -124,8 +98,6 @@ app.post('/testing', function(req, res) {
   // // Use pattern matching to scrub username input of single quotes bunched together to prevent SQL injection. Checkmake terrorists
   // var username = user.username.replace(/[\']+/, "\'\'");
   // var score = user.score;
-
-  // console.log([username, score]);
 
   // // Create connection
   // const client = new Client({
@@ -158,12 +130,6 @@ app.post('/testing', function(req, res) {
   res.end('Success');
 });
 
-app.post('/launch', lms.handleLaunch);
-
-https.createServer(options, app).listen(port, function(){
-  console.log(`Server is listening at http://localhost:${port}`);
-});
-
-// app.listen(port, function(){
-//   console.log( `Server is listening at http://localhost:${port}`);
-// })
+app.listen(port, function(){
+  console.log( `Server is listening at http://localhost:${port}`);
+})

@@ -2,17 +2,14 @@
  * Code for image fading functions: https://leewc.com/articles/javascript-fade-in-out-callback/
  */
 
-function fadeIn(element) {
+function fadeIn(image) {
     var op = 0.1;  // initial opacity
 
     var fadeInTimer = setInterval(function () {
         if (op >= 1){
-            document.getElementById("image-button").disabled = false;
-            document.getElementById("no-button").disabled = false;
-
             clearInterval(fadeInTimer);
         }
-        element.style.opacity = op;
+        image.style.opacity = op;
         op += 0.05; // Change this value to make fade in more or less gradual
     }, 50);
 }

@@ -5,7 +5,7 @@ import {
   BrowserRouter
 } from "react-router-dom";
 import AlternateChoices from './pages/afc';
-import LoginPage from './pages/login page';
+import LoginPage from './pages/loginPage';
 import Testing from './pages/testing';
 // import Home from './pages/home';
 

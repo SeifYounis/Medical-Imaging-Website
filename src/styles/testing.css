@@ -17,7 +17,7 @@
   /* Control the right side */
   .right {
     right: 0;
-    background-color:turquoise;
+    background-color:cyan;
   }
   
   /* Center content horizontally and vertically */
@@ -31,8 +31,8 @@
   
   /* Style the image inside the centered container, if needed */
   .centered img {
-    max-height: 95vh;
-    max-width: 45vw;
+    max-height: 90vh;
+    max-width: 50vw;
   }
   
   .testing-prompt {

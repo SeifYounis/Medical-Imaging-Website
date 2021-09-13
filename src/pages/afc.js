@@ -1,15 +1,19 @@
-import React from 'react'
-import test_xray from '../images/SImage326303.jpg'
-import puppy from '../images/puppy.png'
+import React, { Component } from 'react'
+// import present_scan from '../images/SImage001303.jpg'
+// import absent_scan from '../images/SImage004094.jpg'
 import '../styles/afc.css'
 
-document.addEventListener('keyup', (event) => {
-    if (event.key === "f" || event.key === "j") {
-        //document.getElementById("afc-prompt").innerHTML = "You pressed f or j";
-    }
-});
+class AlternateChoices extends Component {
+    
 
-class AlternateChoices extends React.Component {
+    componentDidMount() {
+        document.addEventListener('keydown', (event) => {
+            if (event.key === "f" || event.key === "j") {
+                document.getElementById("afc-prompt").innerHTML = "You pressed f or j";
+            }
+        });
+    }
+
     render() {
         return (
             <body>
@@ -24,10 +28,10 @@ class AlternateChoices extends React.Component {
                     </h1>
                 </div>
     
-                <div class="split left" id="split-afc">
+                {/* <div class="split left" id="split-afc">
                     <div class="centered">
                         <button class="image-button" id="image-button">
-                            <img src={test_xray} alt="test-xray" id="test-xray"/>
+                            <img src={absent_scan} alt="test-xray" id="test-xray"/>
                         </button>
                     </div>
                 </div>
@@ -35,10 +39,10 @@ class AlternateChoices extends React.Component {
                 <div class="split right" id="split-afc">
                     <div class="centered">
                         <button class="image-button" id="image-button">
-                            <img src={puppy} alt="test-puppy" id="test-puppy"/>
+                            <img src={present_scan} alt="test-puppy" id="test-puppy"/>
                         </button>
                     </div>
-                </div>
+                </div> */}
             </body>
         )
     }

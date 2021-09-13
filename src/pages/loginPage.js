@@ -32,20 +32,6 @@ class LoginPage extends React.Component {
           });
 
         this.props.history.push('/testing')
-        // fetch('/testing', { 
-        //     method: 'POST',
-        //     body: JSON.stringify(this.state),
-        //     headers: {
-        //         'content-Type': 'application/json'
-        //     }
-        //   })
-        //   .then(function(response) {
-        //     return response.json()
-        //   }).then(function(body) {
-        //     console.log(body);
-        //   });
-
-        // this.props.history.push('/testing');
     }
 
     render() {

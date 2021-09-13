@@ -1,172 +1,87 @@
-/**
- * Code for animated countdown timer: https://css-tricks.com/how-to-create-an-animated-countdown-timer-with-html-css-and-javascript/
- */
-
-import React from 'react'
+import { Component } from 'react'
 import '../styles/testing.css'
 import '../styles/timer.css'
-import { fadeOutAndfadeIn } from '../assets/fading animation'
-import test_xray from '../images/SImage326303.jpg'
-import puppy from '../images/puppy.png'
+import { fadeOutAndfadeIn } from '../assets/fadingAnimation'
+import {
+    presentImages,
+    absentImages
+} from '../assets/loadImages'
+import { Timer } from '../assets/timer'
 
-const FULL_DASH_ARRAY = 283;
-const TIME_LIMIT = 10;
-const WARNING_THRESHOLD = 7;
-const ALERT_THRESHOLD = 3;
+var timer = new Timer();
 
-const COLOR_CODES = {
-    info: {
-      color: "green"
-    },
-    warning: {
-        color: "orange",
-        threshold: WARNING_THRESHOLD
-      },
-      alert: {
-        color: "red",
-        threshold: ALERT_THRESHOLD
-      }
-  };
-  
-let remainingPathColor = COLOR_CODES.info.color;
+function nextImage(prev_image) {
+    let random = (min = 0, max = 10) => {
+        let num = Math.random() * (max - min) + min;
 
-// Initially, no time has passed, but this will count up
-// and subtract from the TIME_LIMIT
-let timeLeft = TIME_LIMIT;
-let timerInterval = null;
-
-function formatTime(time) {
-    // Seconds are the remainder of the time divided by 60 (modulus operator)
-    let seconds = time % 60;
-
-    // Output seconds remaining
-    return `${seconds}`;
+        return Math.round(num);
+    };
 }
 
-// Divides time left by the defined time limit.
-function calculateTimeFraction() {
-    const rawTimeFraction = timeLeft / TIME_LIMIT;
-    return rawTimeFraction - (1 / TIME_LIMIT) * (1 - rawTimeFraction);
-}
+class Testing extends Component {
+    constructor() {
+        super();
 
-// Update the dasharray value as time passes, starting with 283
-function setCircleDasharray() {
-    const circleDasharray = `${(
-        calculateTimeFraction() * FULL_DASH_ARRAY
-    ).toFixed(0)} 283`;
-    document
-        .getElementById("base-timer-path-remaining")
-        .setAttribute("stroke-dasharray", circleDasharray);
-}
-
-function setRemainingPathColor(timeLeft) {
-    const {alert, warning, info} = COLOR_CODES;
-  
-    // If the remaining time is less than or equal to 3, change the color on the timer to red
-    if (timeLeft <= alert.threshold) {
-      document
-        .getElementById("base-timer-path-remaining")
-        .setAttribute("color", alert.color);
-  
-    // If the remaining time is less than or equal to 7, change the color on the timer to yellow
-    } else if (timeLeft <= warning.threshold) {
-      document
-        .getElementById("base-timer-path-remaining")
-        .setAttribute("color", warning.color);
-
-    // If time remaining is greater than 7, timer color should be green
-    } else {
-        document
-        .getElementById("base-timer-path-remaining")
-        .setAttribute("color", info.color);
-    }
-}
-
-function processSelection() {
-    clearInterval(timerInterval);
-
-    document.getElementById("image-button").disabled = true;
-    document.getElementById("no-button").disabled = true;
-
-    let image = document.getElementById("test-xray");
-
-    fadeOutAndfadeIn(image, puppy);
-
-    startTimer();
-}
-
-function startTimer() {
-    let timePassed = 0;
-
-    timerInterval = setInterval(() => {
-        document.getElementById("image-button").onclick = processSelection;
-        document.getElementById("no-button").onclick = processSelection;
-
-        // The amount of time passed increments by one
-        timePassed = timePassed += 1;
-        timeLeft = TIME_LIMIT - timePassed;
-        
-        // The time left label is updated
-        document.getElementById("base-timer-label").innerHTML = formatTime(timeLeft);
-
-        setCircleDasharray();
-        setRemainingPathColor(timeLeft);
-
-        if (timeLeft === 0) {
-            clearInterval(timerInterval);
+        this.state = {
+            isDisabled: false
         }
-    }, 1000*1);
-}
+    }
 
-class Testing extends React.Component {
+    // Function for picking next image to display and transitioning to it
+    processSelection() {
+        this.setState({
+            isDisabled: true
+        });
+
+        clearInterval(timer.timerInterval);
+
+        let image = document.getElementById("medical-scan");
+
+        fadeOutAndfadeIn(image, absentImages[0].default);
+
+        setTimeout(
+            function () {
+                this.setState({
+                    isDisabled: false
+                });
+            }.bind(this),
+            2000
+        );
+
+        timer.startTimer();
+    }
+
+    componentDidMount() {
+        timer.startTimer();
+    }
+
     render() {
         return (
             <body>
-                <script>
-                    {startTimer()}
-                </script>
-
                 <div class="split left">
                     <div class="centered">
-                        <button class="image-button" id="image-button">
-                            <img src={test_xray} alt="test-xray" id="test-xray"/>
+                        <button class="image-button"
+                            id="image-button"
+                            disabled={this.state.isDisabled}
+                            onClick={this.processSelection.bind(this)}>
+                            <img src={presentImages[0].default} alt="medical-scan" id="medical-scan" />
                         </button>
                     </div>
                 </div>
-    
+
                 <div class="split right">
                     <div class="top-right">
                         <h1 class="testing-prompt">Click on the image if you believe it contains a signal. Otherwise, click 'No'</h1>
                     </div>
-    
+
                     <div class="center-right">
-                        <button class="no-button" id="no-button">No</button>
+                        <button class="no-button" id="no-button"
+                            disabled={this.state.isDisabled}
+                            onClick={this.processSelection.bind(this)}
+                        >No</button>
                     </div>
-    
-                    <div class="bottom-right">
-                        <div class="base-timer">
-                            <svg class="base-timer__svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-                                <g class="base-timer__circle">
-                                    <circle class="base-timer__path-elapsed" cx="50" cy="50" r="45" />
-                                    <path
-                                        id="base-timer-path-remaining"
-                                        stroke-dasharray="283"
-                                        class="base-timer__path-remaining" 
-                                        color={remainingPathColor}
-                                        d="
-                                        M 50, 50
-                                        m -45, 0
-                                        a 45,45 0 1,0 90,0
-                                        a 45,45 0 1,0 -90,0
-                                        "
-                                    ></path>
-                                </g>
-                            </svg>
-                            <span id="base-timer-label" class="base-timer__label">
-                                {formatTime(timeLeft)}
-                            </span>
-                        </div>
-                    </div>
+
+                    <Timer/>
                 </div>
             </body>
         )
