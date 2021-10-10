@@ -1,6 +1,4 @@
 import React, { Component } from 'react'
-// import present_scan from '../images/SImage001303.jpg'
-// import absent_scan from '../images/SImage004094.jpg'
 import '../styles/afc.css'
 
 class AlternateChoices extends Component {

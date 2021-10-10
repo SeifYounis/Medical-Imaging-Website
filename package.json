@@ -1,25 +1,28 @@
 {
   "name": "reader_study",
   "version": "0.1.0",
-  "private": true,
+  "private": "true",
   "description": "Web application of medical imaging reader study",
-  "main": "server.js",
   "author": {
     "name": "Seif Younis",
     "email": "seifyounis23@gmail.com"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/SeifYounis/Medical-Imaging-Website.git"
+  },
+  "main": "server.js",
   "dependencies": {
     "@testing-library/jest-dom": "^5.11.4",
     "@testing-library/react": "^11.1.0",
-    "connect-pg-simple": "^6.2.1",
+    "cookie-parser": "^1.4.5",
     "dotenv": "^10.0.0",
     "express": "^4.17.1",
-    "express-session": "^1.17.2",
     "ims-lti": "^3.0.2",
     "pg": "^8.7.1",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
-    "react-router-dom": "^5.2.0",
+    "react-router-dom": "^5.3.0",
     "react-scripts": "4.0.3",
     "web-vitals": "^1.0.1"
   },

@@ -3,19 +3,21 @@
  */
 
 import { Component } from "react";
+import { fadeOutAndfadeIn } from '../assets/fadingAnimation'
+import '../styles/timer.css'
+
+const FULL_DASH_ARRAY = 283;
+const TIME_LIMIT = 10;
+const WARNING_THRESHOLD = 7;
+const ALERT_THRESHOLD = 3;
 
 export class Timer extends Component {
     constructor() {
         super();
 
-        this.FULL_DASH_ARRAY = 283;
-        this.TIME_LIMIT = 10;
-        this.WARNING_THRESHOLD = 7;
-        this.ALERT_THRESHOLD = 3;
-
         // Initially, no time has passed, but this will count up
         // and subtract from the TIME_LIMIT
-        this.timeLeft = this.TIME_LIMIT;
+        this.timeLeft = TIME_LIMIT;
         this.timerInterval = null;
     }
 
@@ -29,13 +31,13 @@ export class Timer extends Component {
     }
 
     calculateTimeFraction() {
-        const rawTimeFraction = this.timeLeft / this.TIME_LIMIT;
-        return rawTimeFraction - (1 / this.TIME_LIMIT) * (1 - rawTimeFraction);
+        const rawTimeFraction = this.timeLeft / TIME_LIMIT;
+        return rawTimeFraction - (1 / TIME_LIMIT) * (1 - rawTimeFraction);
     }
 
     setCircleDasharray() {
         const circleDasharray = `${(
-            this.calculateTimeFraction() * this.FULL_DASH_ARRAY
+            this.calculateTimeFraction() * FULL_DASH_ARRAY
         ).toFixed(0)} 283`;
         document
             .getElementById("base-timer-path-remaining")
@@ -49,11 +51,11 @@ export class Timer extends Component {
             },
             warning: {
                 color: "orange",
-                threshold: this.WARNING_THRESHOLD
+                threshold: WARNING_THRESHOLD
             },
             alert: {
                 color: "red",
-                threshold: this.ALERT_THRESHOLD
+                threshold: ALERT_THRESHOLD
             }
         };
 
@@ -79,13 +81,15 @@ export class Timer extends Component {
         }
     }
 
-    startTimer() {
+    startTimer(page) {
         let timePassed = 0;
+
+        document.getElementById("medical-scan").style.visibility = "visible";
 
         this.timerInterval = setInterval(() => {
             // The amount of time passed increments by one
             timePassed = timePassed += 1;
-            this.timeLeft = this.TIME_LIMIT - timePassed;
+            this.timeLeft = TIME_LIMIT - timePassed;
 
             // The time left label is updated
             document.getElementById("base-timer-label").innerHTML = this.formatTime(this.timeLeft);
@@ -93,23 +97,48 @@ export class Timer extends Component {
             this.setCircleDasharray();
             this.setRemainingPathColor();
 
+            let currentImage = document.getElementById("medical-scan")
+
+            if (this.timeLeft <= 5) {
+                currentImage.style.visibility = "hidden"
+            }
+
             if (this.timeLeft === 0) {
                 clearInterval(this.timerInterval);
+
+                page.setState({
+                    score: page.state.correct/(page.state.totalAnswered + 1),
+                    isDisabled: true,
+                    totalAnswered: page.state.totalAnswered + 1,
+                })
+    
+                fadeOutAndfadeIn(currentImage, page.newImage());
+        
+                setTimeout(
+                    function () {
+                        page.setState({
+                            isDisabled: false
+                        });
+                    },
+                    2000
+                );
+
+                this.startTimer(page)
             }
         }, 1000 * 1);
     }
 
     render() {
         return (
-            <div class="bottom-right">
-                <div class="base-timer">
-                    <svg class="base-timer__svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-                        <g class="base-timer__circle">
-                            <circle class="base-timer__path-elapsed" cx="50" cy="50" r="45" />
+            <div className="bottom-right">
+                <div className="base-timer">
+                    <svg className="base-timer__svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                        <g className="base-timer__circle">
+                            <circle className="base-timer__path-elapsed" cx="50" cy="50" r="45" />
                             <path
                                 id="base-timer-path-remaining"
-                                stroke-dasharray="283"
-                                class="base-timer__path-remaining"
+                                strokeDasharray="283"
+                                className="base-timer__path-remaining"
                                 color="green"
                                 d="
                                     M 50, 50
@@ -120,7 +149,7 @@ export class Timer extends Component {
                             ></path>
                         </g>
                     </svg>
-                    <span id="base-timer-label" class="base-timer__label">
+                    <span id="base-timer-label" className="base-timer__label">
                         {10}
                     </span>
                 </div>
