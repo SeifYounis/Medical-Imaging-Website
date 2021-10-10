@@ -1,11 +1,11 @@
   /* Sets the containers height and width */
   .base-timer {
     position: absolute;
-    left:10vw;
-    bottom: 10vh;
+    left: 15vw;
+    bottom: 26vh;
 
-    height: 30vh;
-    width: 30vw;
+    height: 20vh;
+    width: 20vw;
   }
   
   /* Removes SVG styling that would hide the time label */
@@ -24,8 +24,8 @@
     position: absolute; 
 
     /* Size should match the parent container */
-    height: 30vh;
-    width: 30vw;
+    height: 20vh;
+    width: 20vw;
     
     /* Keep the label aligned to the top */
     top: 0;
@@ -36,7 +36,7 @@
     justify-content: center;
    
     /* Sort of an arbitrary number; adjust to your liking */
-    font-size: 10vh;
+    font-size: 8.5vh;
 }
 
 .base-timer__path-remaining {
@@ -59,8 +59,8 @@
   
   .base-timer__svg {
     /* Size should match the parent container */
-    height: 30vh;
-    width: 30vw;
+    height: 20vh;
+    width: 20vw;
 
     /* Flips the svg and makes the animation to move left-to-right */
     transform: scaleX(-1);

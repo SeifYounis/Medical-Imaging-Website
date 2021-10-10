@@ -11,13 +11,13 @@
   /* Control the left side */
   .left {
     left: 0;
-    background-color:gray;
+    background-color:cyan;
   }
   
   /* Control the right side */
   .right {
     right: 0;
-    background-color:cyan;
+    background-color:springgreen;
   }
   
   /* Center content horizontally and vertically */
@@ -31,11 +31,15 @@
   
   /* Style the image inside the centered container, if needed */
   .centered img {
-    max-height: 90vh;
-    max-width: 50vw;
+    max-height: 80vh;
+    max-width: 40vw;
   }
-  
-  .testing-prompt {
+
+  #medical-scan {
+    visibility: visible;
+  }
+
+  .prompt-testing {
       margin-top: 0%;
       text-align: center;
       font-size: 3.5vh;
@@ -48,7 +52,19 @@
       margin-bottom: 5%;
       margin-right: 5%;
       background-color:yellow;
-      border-width: 1vw; 
+      border-width: 1vw;
+      border-radius: 1vw; 
       font-size: 10vh;
       font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+  }
+
+  #score {
+    text-align: center;
+    font-size: 5vh;
+    border-width: 0.5vw;
+    border-style: solid;
+    border-color: purple;
+    margin: 21vh 0vw 10vh 0vw;
+    width: 49vw;
+    height: 10vh;
   }
