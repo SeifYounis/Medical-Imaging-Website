@@ -15,10 +15,12 @@ const path = require('path')
 const port = process.env.PORT || 3000;
 
 const express = require('express')
-const app = express()
+const session = require('express-session');
 const cookieParser = require('cookie-parser');
+const app = express()
 
 const {Pool} = require('pg')
+const PostgreSQLStore = require('connect-pg-simple')(session)
 
 const launch_lti = require('./src/assets/launch_lti.js')
 const lti = require('ims-lti');
@@ -32,26 +34,26 @@ const pool = new Pool({
   }
 })
 
-app.set('trust proxy', 1)
+// app.set('trust proxy', 1)
 
-// app.use(session({
-//   secret: process.env.SESSION_SECRET,
-//   saveUninitialized: false,
-//   resave: true,
-//   // store: new PostgreSQLStore({
-//   //   conString: process.env.DATABASE_URL,
-//   //   pool: pool,
-//   //   schemaName: 'public',
-//   //   tableName: 'session'
-//   // }),
-
-//   cookie: {
-//     sameSite: 'None',
-//     maxAge: 6 * 60 * 60 * 1000, // Cookie lasts 6 hours, after which time the assignment must be relaunched
-//     secure: true,
-//     httpOnly: true
-//   }
-// }))
+app.use(session({
+  secret: process.env.SESSION_SECRET,
+  saveUninitialized: false,
+  resave: true,
+  store: new PostgreSQLStore({
+    conString: process.env.DATABASE_URL,
+    pool: pool,
+    schemaName: 'public',
+    tableName: 'session'
+  }),
+  proxy: true,
+  cookie: {
+    sameSite: 'None',
+    maxAge: 6 * 60 * 60 * 1000, // Cookie lasts 6 hours, after which time the assignment must be relaunched
+    secure: true,
+    httpOnly: true
+  }
+}))
 
 // Used to parse request data that sent from web pages in JSON format
 app.use(express.json())
@@ -64,7 +66,9 @@ app.post('/launch', launch_lti.handleLaunch);
 app.post('/postGrade', function(req, res) {
   const provider = new lti.Provider(process.env.CONSUMER_KEY, process.env.CONSUMER_SECRET, new lti.Stores.MemoryStore(), lti.HMAC_SHA1);
 
-  provider.valid_request(req, req.cookies.canvas_lti_launch_params, (_err, _isValid) => {
+  console.log(req.session)
+
+  provider.valid_request(req, req.session.canvas_lti_launch_params, (_err, _isValid) => {
       provider.outcome_service.send_replace_result(parseFloat(req.body.score), (_err, _result) => {
         console.log("Graded")
       })
