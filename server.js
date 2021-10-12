@@ -46,7 +46,6 @@ app.use(session({
     schemaName: 'public',
     tableName: 'session'
   }),
-  // proxy: true,
   cookie: {
     // sameSite: 'None',
     maxAge: 6 * 60 * 60 * 1000, // Cookie lasts 6 hours, after which time the assignment must be relaunched
@@ -66,11 +65,17 @@ app.post('/launch', launch_lti.handleLaunch);
 app.post('/postGrade', function(req, res) {
   const provider = new lti.Provider(process.env.CONSUMER_KEY, process.env.CONSUMER_SECRET, new lti.Stores.MemoryStore(), lti.HMAC_SHA1);
 
-  console.log(req.cookies['connect.sid'])
-  let sid = req.cookies['connect.sid'].substring(2);
-  console.log(sid)
+  // console.log(req.cookies['connect.sid'])
+  // let sid = req.cookies['connect.sid'].substring(2);
+  // console.log(sid)
 
-  console.log(req.session);
+  // console.log(req.session);
+
+  provider.valid_request(req, req.session.canvas_lti_launch_params, (_err, _isValid) => {
+      provider.outcome_service.send_replace_result(parseFloat(req.body.score), (_err, _result) => {
+        console.log("Graded")
+      })
+  });
 
   // provider.valid_request(req, req.cookies.canvas_lti_launch_params, (_err, _isValid) => {
   //     provider.outcome_service.send_replace_result(parseFloat(req.body.score), (_err, _result) => {
