@@ -34,24 +34,24 @@ const pool = new Pool({
   }
 })
 
-// app.set('trust proxy', 1)
+app.set('trust proxy', 1)
 
 app.use(session({
   secret: process.env.SESSION_SECRET,
-  saveUninitialized: false,
-  resave: true,
+  saveUninitialized: true,
+  resave: false,
   store: new PostgreSQLStore({
     conString: process.env.DATABASE_URL,
     pool: pool,
     schemaName: 'public',
     tableName: 'session'
   }),
-  proxy: true,
+  // proxy: true,
   cookie: {
-    sameSite: 'None',
+    // sameSite: 'None',
     maxAge: 6 * 60 * 60 * 1000, // Cookie lasts 6 hours, after which time the assignment must be relaunched
-    secure: true,
-    httpOnly: true
+    // secure: true,
+    domain: 'seif-reader-study.herokuapp.com',
   }
 }))
 
@@ -66,9 +66,9 @@ app.post('/launch', launch_lti.handleLaunch);
 app.post('/postGrade', function(req, res) {
   const provider = new lti.Provider(process.env.CONSUMER_KEY, process.env.CONSUMER_SECRET, new lti.Stores.MemoryStore(), lti.HMAC_SHA1);
 
-  console.log(req.session)
+  // console.log(req.session)
 
-  provider.valid_request(req, req.session.canvas_lti_launch_params, (_err, _isValid) => {
+  provider.valid_request(req, req.cookies.canvas_lti_launch_params, (_err, _isValid) => {
       provider.outcome_service.send_replace_result(parseFloat(req.body.score), (_err, _result) => {
         console.log("Graded")
       })
@@ -96,6 +96,20 @@ app.post('/unlocked-testing', function (req, res) {
     res.status(200).json(result.rows[0])
   })
 })
+
+app.post('/custompage', function(req, res){
+  if(req.session.page_views){
+     req.session.page_views++;
+     res.send("You visited this page " + req.session.page_views + " times");
+  } else {
+     req.session.page_views = 1;
+     res.send("Welcome to this page for the first time!");
+  }
+});
+
+// app.get('/getsession', function(req, res) {
+//   res.send(req.session.canvas_lti_launch_params);
+// })
 
 // Renders HTML file from Simplephy source code
 app.use(express.static(path.join(__dirname, 'static')));

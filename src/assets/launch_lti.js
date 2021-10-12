@@ -1,9 +1,10 @@
 /**
- * Primary reference for IMS LTI implementation: https://github.com/hpi-schul-cloud/node-lti-provider-example
+ * Primary reference for IMS LTI implementation: https://github.com/js-kyle/nodejs-lti-provider
  * Other important references: 
  * https://community.canvaslms.com/t5/Canvas-Developers-Group/Hire-an-LTI-Consultant-Freelancer/td-p/136029
  * https://community.canvaslms.com/t5/Canvas-Developers-Group/SameSite-Cookies-and-Canvas/ba-p/257967
  * https://github.com/instructure/ims-lti
+ * https://github.com/hpi-schul-cloud/node-lti-provider-example
  * 
  */
 
@@ -63,14 +64,26 @@ exports.handleLaunch = (req, res, next) => {
          * The information from these parameters can enable grade passback
          */
 
-        // res.cookie("canvas_lti_launch_params", provider.body, {
-        //   maxAge: 1000 * 60 * 60 * 6, // Cookie lasts 6 hours, after which time the assignment must be relaunched
-        //   secure: true,
-        //   httpOnly: true,
-        //   sameSite: 'none', // This property is absolutely necessary to ensure launch URL can save these params in a cookie
-        // });
+        res.cookie("canvas_lti_launch_params", provider.body, {
+          maxAge: 1000 * 60 * 60 * 6, // Cookie lasts 6 hours, after which time the assignment must be relaunched
+          secure: true,
+          httpOnly: true,
+          sameSite: 'none', // This property is absolutely necessary to ensure launch URL can save these params in a cookie
+        });
 
-        req.session.regenerate(err => {
+        // // Check if app was launched as an assignment by a student
+        // if (provider.outcome_service) {
+        //   return res.redirect(301, '/login');
+        // }
+
+        // // Check if app was launched by an instructor
+        // if (provider.body.roles[0] === 'Instructor') {
+        //   return res.redirect('/admin')
+        // }
+
+        // return res.send(`It looks like this LTI wasn't launched as an assignment`);
+
+        return req.session.regenerate(err => {
           if (err) next(err);
 
           req.session.canvas_lti_launch_params = provider.body;
@@ -84,8 +97,6 @@ exports.handleLaunch = (req, res, next) => {
           if (provider.body.roles[0] === 'Instructor') {
             return res.redirect('/admin')
           }
-
-          return res.send(`It looks like this LTI wasn't launched as an assignment`);
         });
         
       } else {
