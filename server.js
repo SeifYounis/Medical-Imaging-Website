@@ -66,7 +66,7 @@ app.post('/launch', launch_lti.handleLaunch);
 app.post('/postGrade', function(req, res) {
   const provider = new lti.Provider(process.env.CONSUMER_KEY, process.env.CONSUMER_SECRET, new lti.Stores.MemoryStore(), lti.HMAC_SHA1);
 
-  // console.log(req.session)
+  console.log(req.cookies['connect.sid'])
 
   provider.valid_request(req, req.cookies.canvas_lti_launch_params, (_err, _isValid) => {
       provider.outcome_service.send_replace_result(parseFloat(req.body.score), (_err, _result) => {
