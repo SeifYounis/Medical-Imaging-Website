@@ -69,7 +69,7 @@ app.post('/postGrade', function(req, res) {
   // let sid = req.cookies['connect.sid'].substring(2);
   // console.log(sid)
 
-  // console.log(req.session);
+  console.log(req.session.canvas_lti_launch_params);
 
   provider.valid_request(req, req.session.canvas_lti_launch_params, (_err, _isValid) => {
       provider.outcome_service.send_replace_result(parseFloat(req.body.score), (_err, _result) => {
