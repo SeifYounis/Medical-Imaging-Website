@@ -64,12 +64,12 @@ exports.handleLaunch = (req, res, next) => {
          * The information from these parameters can enable grade passback
          */
 
-        res.cookie("canvas_lti_launch_params", provider.body, {
-          maxAge: 1000 * 60 * 60 * 6, // Cookie lasts 6 hours, after which time the assignment must be relaunched
-          secure: true,
-          httpOnly: true,
-          sameSite: 'none', // This property is absolutely necessary to ensure launch URL can save these params in a cookie
-        });
+        // res.cookie("canvas_lti_launch_params", provider.body, {
+        //   maxAge: 1000 * 60 * 60 * 6, // Cookie lasts 6 hours, after which time the assignment must be relaunched
+        //   secure: true,
+        //   httpOnly: true,
+        //   sameSite: 'none', // This property is absolutely necessary to ensure launch URL can save these params in a cookie
+        // });
 
         // // Check if app was launched as an assignment by a student
         // if (provider.outcome_service) {

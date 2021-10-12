@@ -38,7 +38,7 @@ app.set('trust proxy', 1)
 
 app.use(session({
   secret: process.env.SESSION_SECRET,
-  saveUninitialized: true,
+  saveUninitialized: false,
   resave: false,
   store: new PostgreSQLStore({
     conString: process.env.DATABASE_URL,
@@ -67,6 +67,7 @@ app.post('/postGrade', function(req, res) {
   const provider = new lti.Provider(process.env.CONSUMER_KEY, process.env.CONSUMER_SECRET, new lti.Stores.MemoryStore(), lti.HMAC_SHA1);
 
   console.log(req.cookies['connect.sid'])
+  console.log(req.session);
 
   provider.valid_request(req, req.cookies.canvas_lti_launch_params, (_err, _isValid) => {
       provider.outcome_service.send_replace_result(parseFloat(req.body.score), (_err, _result) => {
