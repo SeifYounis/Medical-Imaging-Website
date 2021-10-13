@@ -63,7 +63,6 @@ exports.handleLaunch = (req, res, next) => {
          * Use cookies to save special request parameters sent by the launch URL. 
          * The information from these parameters can enable grade passback
          */
-
         res.cookie("canvas_lti_launch_params", provider.body, {
           maxAge: 1000 * 60 * 60 * 6, // Cookie lasts 6 hours, after which time the assignment must be relaunched
           secure: true,
@@ -71,32 +70,23 @@ exports.handleLaunch = (req, res, next) => {
           sameSite: 'none', // This property is absolutely necessary to ensure launch URL can save these params in a cookie
         });
 
-        // // Check if app was launched as an assignment by a student
-        // if (provider.outcome_service) {
-        //   return res.redirect(301, '/login');
-        // }
-
-        // // Check if app was launched by an instructor
-        // if (provider.body.roles[0] === 'Instructor') {
-        //   return res.redirect('/admin')
-        // }
-
-        // return res.send(`It looks like this LTI wasn't launched as an assignment`);
-
         return req.session.regenerate(err => {
           if (err) next(err);
 
-          req.session.canvas_lti_launch_params = provider.body;
+          // req.session.canvas_lti_launch_params = provider.body;
 
           // Check if app was launched as an assignment by a student
           if (provider.outcome_service) {
-            return res.redirect(301, '/login');
+            return res.redirect(301, '/access-testing');
           }
 
           // Check if app was launched by an instructor
           if (provider.body.roles[0] === 'Instructor') {
             return res.redirect('/admin')
           }
+
+          return res.send(`It looks like this LTI wasn't launched as an assignment`);
+
         });
         
       } else {
