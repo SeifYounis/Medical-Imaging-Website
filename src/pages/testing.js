@@ -74,32 +74,47 @@ class Testing extends Component {
 
     // Function for picking next image to display and transitioning to it
     processSelection(selectedAnswer) {
+        // debugger;
+        var resultContainer;
+
+        clearInterval(timer.timerInterval);
+
         if (this.state.totalAnswered === 20) {
-            console.log(absentImages.length);
-            console.log(presentImages.length);
-            clearInterval(timer.timerInterval);
         } else {
             if (selectedAnswer === this.state.correctAnswer) {
+                resultContainer = document.getElementById('correct')
+
                 this.setState({
                     score: (this.state.correct + 1)/(this.state.totalAnswered + 1),
                     correct: this.state.correct + 1
                 })
             } else {
+                resultContainer = document.getElementById('incorrect')
+
                 this.setState({
                     score: this.state.correct/(this.state.totalAnswered + 1),
                 })
             }
-    
+
             this.setState({
                 isDisabled: true,
                 totalAnswered: this.state.totalAnswered + 1,
             });
-    
-            clearInterval(timer.timerInterval);
-    
+
+            if (this.props.type === "training") {
+                resultContainer.style.display = "block";
+                document.getElementById('testing-container').style.display = "none";
+
+                setTimeout(() => {
+                    document.getElementById('testing-container').style.display = "block";
+                    resultContainer.style.display = "none";
+                }, 2000)
+            }
+
             let image = document.getElementById("medical-scan");
-    
-            fadeOutAndfadeIn(image, this.newImage());
+            setTimeout(() => {
+                fadeOutAndfadeIn(image, this.newImage());
+            }, 2000)
     
             setTimeout(
                 function () {
@@ -107,10 +122,12 @@ class Testing extends Component {
                         isDisabled: false
                     });
                 }.bind(this),
-                2000
+                3750
             );
-    
-            timer.startTimer(this);
+
+            setTimeout(() => {
+                timer.startTimer(this);
+            }, 2000)
         }
     }
 
@@ -123,35 +140,47 @@ class Testing extends Component {
     render() {
         return (
             <body>
-                <div class="split left">
-                    <div class="centered">
-                        <button
-                            id="image-button"
-                            disabled={this.state.isDisabled}
-                            onClick={() => this.processSelection("Yes")}>
-                            <img alt="medical-scan" id="medical-scan"/>
-                        </button>
+                <div id="testing-container">
+                    <div class="split left">
+                        <div class="centered">
+                            <button
+                                id="image-button"
+                                disabled={this.state.isDisabled}
+                                onClick={() => this.processSelection("Yes")}>
+                                <img alt="medical-scan" id="medical-scan"/>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="split right">
+                        <div class="top-right">
+                            <h1 class="prompt-testing">Click on the image if you believe it contains a signal. Otherwise, click 'No'</h1>
+                        </div>
+
+                        <div class="center-right">
+                            <button class="no-button" id="no-button"
+                                disabled={this.state.isDisabled}
+                                onClick={() => this.processSelection("No")}
+                            >No</button>
+
+                            <Timer/>
+                        </div>
+
+                        <div class="bottom-right">
+                            <h2 id="score">
+                                Score: {this.state.correct}/{this.state.totalAnswered}
+                            </h2>
+                        </div>
                     </div>
                 </div>
 
-                <div class="split right">
-                    <div class="top-right">
-                        <h1 class="prompt-testing">Click on the image if you believe it contains a signal. Otherwise, click 'No'</h1>
+                <div id="feedback-container">
+                    <div id="correct">
+                        CORRECT
                     </div>
 
-                    <div class="center-right">
-                        <button class="no-button" id="no-button"
-                            disabled={this.state.isDisabled}
-                            onClick={() => this.processSelection("No")}
-                        >No</button>
-
-                        <Timer/>
-                    </div>
-
-                    <div class="bottom-right">
-                        <h2 id="score">
-                            Score: {this.state.correct}/{this.state.totalAnswered}
-                        </h2>
+                    <div id="incorrect">
+                        INCORRECT
                     </div>
                 </div>
             </body>

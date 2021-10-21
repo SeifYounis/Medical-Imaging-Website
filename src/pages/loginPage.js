@@ -25,7 +25,7 @@ class LoginPage extends Component {
             console.log(body);
         });
 
-        this.props.history.push('/testing')
+        this.props.history.push('/access-testing')
     }
 
     componentDidMount() {

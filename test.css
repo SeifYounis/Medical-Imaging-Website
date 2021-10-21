@@ -1,0 +1,48 @@
+.feedback-container{
+    position:fixed;
+    background-color: lime;
+    text-align: center;
+    height: 100%;
+    width:100%;
+    top: 0;
+    left: 0;
+}
+
+/* .cell{
+    display:table-cell;
+    vertical-align: middle;
+} */
+
+/* #stimulus, #feedback-container{
+    display:table; */
+    /*height: 85%;*/
+    /*width:100%;*/
+    /* text-align:center;
+    position:relative;
+    margin: auto;
+    background-color: lime;
+} */
+
+/* #trial-container,#feedback-container{ */
+    /* display:none; */
+    /* height: 100%;
+    width: 100%;
+}
+
+.correct{
+    font-size: 200%;
+    text-align: center;
+    margin: 20%;
+    color: black;
+    background-color: lime;
+}
+#feedback-container .cell .incorrect{
+    font-size: 200%;
+    margin: 10%;
+    color: #ff8080;
+}
+
+#stimulus .stimulus-img{
+    float:left;
+    margin:10px;
+} */

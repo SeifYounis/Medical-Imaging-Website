@@ -123,7 +123,9 @@ export class Timer extends Component {
                     2000
                 );
 
-                this.startTimer(page)
+                if (page.state.totalAnswered < 20) {
+                    this.startTimer(page)
+                }
             }
         }, 1000 * 1);
     }

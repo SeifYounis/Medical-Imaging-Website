@@ -22,7 +22,10 @@ export function App() {
           <AccessTesting/>
         </Route>
         <Route path="/testing">
-          <Testing/>
+          <Testing type="testing"/>
+        </Route>
+        <Route path="/training">
+          <Testing type="training"/>
         </Route>
         <Route path="/alternate-choice">
           <AlternateChoices/>
