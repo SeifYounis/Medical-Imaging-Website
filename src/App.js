@@ -9,6 +9,7 @@ import LoginPage from './pages/loginPage';
 import Testing from './pages/testing';
 import Admin from './pages/admin';
 import AccessTesting from './pages/accessTesting'
+import Rating from './pages/rating';
 // import Home from './pages/home';
 
 export function App() {
@@ -26,6 +27,9 @@ export function App() {
         </Route>
         <Route path="/training">
           <Testing type="training"/>
+        </Route>
+        <Route path="/rating">
+          <Rating/>
         </Route>
         <Route path="/alternate-choice">
           <AlternateChoices/>

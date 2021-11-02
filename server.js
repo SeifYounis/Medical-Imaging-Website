@@ -9,6 +9,8 @@
 // );
 // CREATE INDEX IF NOT EXISTS "IDX_session_expire" ON myschema.session ("expire");
 
+// Query obtained here: https://medium.com/developer-rants/how-to-handle-sessions-properly-in-express-js-with-heroku-c35ea8c0e500
+
 require('dotenv').config()
 
 const path = require('path')
@@ -16,7 +18,7 @@ const port = process.env.PORT || 3000;
 
 const express = require('express')
 const session = require('express-session');
-const cookieParser = require('cookie-parser');
+// const cookieParser = require('cookie-parser');
 const app = express()
 
 const {Pool} = require('pg')
@@ -25,7 +27,7 @@ const PostgreSQLStore = require('connect-pg-simple')(session)
 const launch_lti = require('./src/assets/launch_lti.js')
 const lti = require('ims-lti');
 
-app.use(cookieParser())
+// app.use(cookieParser())
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -39,19 +41,19 @@ app.set('trust proxy', 1)
 app.use(session({
   secret: process.env.SESSION_SECRET,
   saveUninitialized: false,
-  resave: false,
+  resave: true,
   store: new PostgreSQLStore({
     conString: process.env.DATABASE_URL,
     pool: pool,
     schemaName: 'public',
     tableName: 'session'
   }),
-  cookie: {
-    // sameSite: 'None',
-    maxAge: 6 * 60 * 60 * 1000, // Cookie lasts 6 hours, after which time the assignment must be relaunched
-    // secure: true,
-    domain: 'seif-reader-study.herokuapp.com',
-  }
+  // cookie: {
+  //   secure: true,
+  //   maxAge: 6 * 60 * 60 * 1000, // Cookie lasts 6 hours, after which time the assignment must be relaunched
+  //   sameSite: 'none',
+  //   // domain: 'seif-reader-study.herokuapp.com',
+  // }
 }))
 
 // Used to parse request data that sent from web pages in JSON format
@@ -69,21 +71,35 @@ app.post('/postGrade', function(req, res) {
   // let sid = req.cookies['connect.sid'].substring(2);
   // console.log(sid)
 
+  console.log("Session in /postGrade")
   console.log(req.session)
-  console.log(req.cookies.canvas_lti_launch_params);
+  console.log(req.sessionID)
 
-  provider.valid_request(req, req.cookies.canvas_lti_launch_params, (_err, _isValid) => {
+  provider.valid_request(req, req.session.canvas_lti_launch_params, (_err, _isValid) => {
       provider.outcome_service.send_replace_result(parseFloat(req.body.score), (_err, _result) => {
         console.log("Graded")
       })
   });
 
-  // provider.valid_request(req, req.session.canvas_lti_launch_params, (_err, _isValid) => {
+  // console.log(req.cookies.canvas_lti_launch_params);
+
+  // provider.valid_request(req, req.cookies.canvas_lti_launch_params, (_err, _isValid) => {
   //     provider.outcome_service.send_replace_result(parseFloat(req.body.score), (_err, _result) => {
   //       console.log("Graded")
   //     })
   // });
 })
+
+// app.get('/givemeasession',function(req,res,next){
+//   req.session.mybool = true;
+//   req.session.somedata = 'mystring';
+//   req.session.evenobjects = { data : 'somedata' };
+//   res.send('Session set!');
+// });
+
+// app.get('/mysession',function(req,res,next){
+//   res.send('My string is '+req.session.somedata+' and my object is '+JSON.stringify(req.session.evenobjects));
+// });
 
 app.post('/unlock-testing', function (req, res) {
   pool.connect((err) => {
@@ -96,13 +112,15 @@ app.post('/unlock-testing', function (req, res) {
   })
 })
 
-app.post('/unlocked-testing', function (req, res) {
+app.get('/unlocked-testing', function (req, res) {
   pool.connect((err) => {
     if(err) throw err;
     console.log('PostgreSQL Connected');
   })
 
   pool.query(`SELECT unlocked FROM unlocksections WHERE assessment='testing'`, function(err, result) {
+    console.log(result.rows[0])
+
     res.status(200).json(result.rows[0])
   })
 })
@@ -120,6 +138,52 @@ app.post('/unlocked-testing', function (req, res) {
 // app.get('/getsession', function(req, res) {
 //   res.send(req.session.canvas_lti_launch_params);
 // })
+
+app.get('/get-username', (req, res) => {
+  var username;
+
+  pool.connect((err) => {
+    if(err) throw err;
+    console.log('PostgreSQL Connected');
+  })
+
+  // Do a PostgreSQL query
+  pool.query("SELECT username FROM students WHERE student_id=$1", [
+    req.session.student_id
+  ], (err, result) => {
+    if (err) throw err;
+
+    username = result.rows[0]
+
+    if(!username) {
+      res.status(200).json({username: null})
+    } else {
+      res.status(200).json(username);
+    }
+  })
+})
+
+app.post('/set-username', (req, res) => {
+  // Get sent data.
+  var username = req.body.username;
+
+  console.log(username)
+
+  pool.connect((err) => {
+    if(err) throw err;
+    console.log('PostgreSQL Connected');
+  })
+  
+  // Do a PostgreSQL query
+  pool.query("INSERT INTO students(student_id, username) VALUES ($1, $2)", [
+    req.session.student_id,
+    username
+  ], (err, result) => {
+    if (err) throw err;
+
+    // pool.end();
+  })
+})
 
 // Renders HTML file from Simplephy source code
 app.use(express.static(path.join(__dirname, 'static')));

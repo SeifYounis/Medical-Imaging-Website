@@ -9,6 +9,14 @@ import { Timer } from '../assets/timer'
 
 var timer = new Timer();
 
+// Every selection contains the following information
+
+// Name of user, user id
+// Timestamp for when an answer is selected
+// Answer user gave
+// Name of the image with unique identifier
+// Type of image
+
 class Testing extends Component {
     constructor() {
         super();
@@ -19,11 +27,14 @@ class Testing extends Component {
             totalAnswered: 0,
             score: 0,
             correctAnswer: null,
+            scanName: null,
         }
     }
 
     // Load new image
     newImage() {
+        console.log(presentImages)
+
         let random = (min, max) => {
             let num = Math.random() * (max - min) + min;
     
@@ -48,7 +59,7 @@ class Testing extends Component {
                 correctAnswer: "No"
             })
 
-            console.log("Absent Images Length: " + absentImages.length)
+            // console.log("Absent Images Length: " + absentImages.length)
 
             let index = random(0, absentImages.length - 1);
             let image = absentImages[index].default
@@ -61,7 +72,7 @@ class Testing extends Component {
                 correctAnswer: "Yes"
             })
 
-            console.log("Present Images Length: " + presentImages.length)
+            // console.log("Present Images Length: " + presentImages.length)
 
             let index = random(0, presentImages.length - 1);
             let image = presentImages[index].default
@@ -74,13 +85,11 @@ class Testing extends Component {
 
     // Function for picking next image to display and transitioning to it
     processSelection(selectedAnswer) {
-        // debugger;
-        var resultContainer;
-
         clearInterval(timer.timerInterval);
 
-        if (this.state.totalAnswered === 20) {
-        } else {
+        if (this.state.totalAnswered < 20) {
+            var resultContainer;
+
             if (selectedAnswer === this.state.correctAnswer) {
                 resultContainer = document.getElementById('correct')
 
@@ -144,7 +153,7 @@ class Testing extends Component {
                     <div class="split left">
                         <div class="centered">
                             <button
-                                id="image-button"
+                                id="scan-button"
                                 disabled={this.state.isDisabled}
                                 onClick={() => this.processSelection("Yes")}>
                                 <img alt="medical-scan" id="medical-scan"/>

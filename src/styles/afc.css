@@ -1,5 +1,5 @@
 .header {
-    background:chartreuse;
+    background:palegoldenrod;
     height: 12vh
 }
 
@@ -12,7 +12,7 @@
 
 #split-afc {
     position: relative;
-    height: 87vh;
+    height: 88vh;
     width: 50%; 
 }
 

@@ -19,9 +19,7 @@ class AccessTesting extends Component {
     }
 
     componentDidMount() {
-        fetch('/unlocked-testing', {
-            method: 'POST',
-        })
+        fetch('/unlocked-testing')
         .then(res => {
             if(res.ok) {
                 return res.json();

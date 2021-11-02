@@ -35,10 +35,6 @@
   max-width: 40vw;
 }
 
-#medical-scan {
-  visibility: visible;
-}
-
 .prompt-testing {
     margin-top: 0%;
     text-align: center;
@@ -58,6 +54,10 @@
     font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
 }
 
+#medical-scan {
+  visibility: visible;
+}
+
 #score {
   text-align: center;
   font-size: 5vh;
@@ -68,6 +68,8 @@
   width: 49vw;
   height: 10vh;
 }
+
+/* Definitely repetitive, but unable to fix it currently */
 
 #feedback-container > #correct {
   display: none;

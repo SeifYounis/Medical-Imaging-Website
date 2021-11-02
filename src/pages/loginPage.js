@@ -5,17 +5,34 @@ class LoginPage extends Component {
     constructor() {
         super();
 
+        // this.state = {
+        //     score: 0.000,
+        // }
+        
         this.state = {
-            score: 0.000,
+            username: null,
+            usernameSet: false
         }
     }
 
     submitForm(e) {
         e.preventDefault();
 
-        fetch('/postGrade', {
+        // fetch('/postGrade', {
+        //     method: 'POST',
+        //     body: JSON.stringify(this.state),
+        //     headers: {
+        //         'content-Type': 'application/json'
+        //     },
+        // }).then(function (response) {
+        //     return response
+        // }).then(function (body) {
+        //     console.log(body);
+        // });
+
+        fetch('/set-username', {
             method: 'POST',
-            body: JSON.stringify(this.state),
+            body: JSON.stringify({username: this.state.username}),
             headers: {
                 'content-Type': 'application/json'
             },
@@ -25,42 +42,89 @@ class LoginPage extends Component {
             console.log(body);
         });
 
-        this.props.history.push('/access-testing')
+        this.setState({
+            usernameSet: true
+        })
+
+        // this.props.history.push('/access-testing')
+    }
+
+    usernameExists() {
+        if(this.state.usernameSet) {
+            return(
+                <body>
+                    <p>Welcome, {this.state.username}</p>
+                </body>
+            )
+        }
+
+        return(
+            <div>
+                <form onSubmit={this.submitForm.bind(this)}>
+                    <input
+                        id="user-login"
+                        type="text" 
+                        placeholder="Username"
+                        onChange={e => this.setState({ username: e.target.value })}>
+                    </input>
+
+                    <button type="submit">Begin</button>
+                </form>
+            </div>
+        )
     }
 
     componentDidMount() {
-        // fetch('/getInfo')
-        // .then(res => {
-        //     if(res.ok) {
-        //         return res.json();
-        //     }
-        // }).then(data => {
-        //     if(data) {
-        //         console.log(data);
-        //     }
-        // }).catch(err => console.error(err));
+        fetch('/get-username')
+        .then(res => {
+            if(res.ok) {
+                return res.json();
+            }
+        }).then(data => {
+            if(data) {
+                console.log(data)
+
+                if(data.username) {
+                    this.setState({
+                        username: data.username,
+                        usernameSet: true
+                    })
+                }
+            }
+        }).catch(err => console.error(err));
     }
 
     render() {
-        return (
-            <body>
-                <div>
-                    <form onSubmit={this.submitForm.bind(this)}>
-                        <input
-                            type="number"
-                            placeholder="Score"
-                            step="0.001"
-                            onChange={e => this.setState({ score: e.target.value })}>
-                            {/* type="text" 
-                            placeholder="Username" 
-                            onChange={e => this.setState({username: e.target.value})}> */}
-                        </input>
+        return this.usernameExists()
 
-                        <button type="submit">Begin</button>
-                    </form>
-                </div>
-            </body>
-        )
+        // return (
+        //     <body>
+        //         {/* <div>
+        //             <form onSubmit={this.submitForm.bind(this)}>
+        //                 <input
+        //                     type="number"
+        //                     placeholder="Score"
+        //                     step="0.001"
+        //                     onChange={e => this.setState({ score: e.target.value })}>
+        //                 </input>
+
+        //                 <button type="submit">Begin</button>
+        //             </form>
+        //         </div> */}
+
+        //         <div>
+        //             <form onSubmit={this.submitForm.bind(this)}>
+        //                 <input
+        //                     type="text" 
+        //                     placeholder="Username" 
+        //                     onChange={e => this.setState({username: e.target.value})}>
+        //                 </input>
+
+        //                 <button type="submit">Begin</button>
+        //             </form>
+        //         </div>
+        //     </body>
+        // )
     }
 }
 
