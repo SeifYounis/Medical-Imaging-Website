@@ -1,6 +1,8 @@
 import React, { Component } from 'react'
-import Slider from 'react-rangeslider'
-import 'react-rangeslider/lib/index.css';
+// import Slider from 'react-rangeslider'
+// import 'react-rangeslider/lib/index.css';
+import Slider from 'rc-slider';
+import 'rc-slider/assets/index.css';
 import '../styles/rating.css'
 import { fadeOutAndfadeIn } from '../assets/fadingAnimation'
 import {
@@ -26,9 +28,9 @@ class Rating extends Component {
         this.state = {
             isDisabled: false,
             selectedValue: 0,
-            ratings: []
+            totalAnswered: 0,
+            // ratings: []
             // correct: 0,
-            // totalAnswered: 0,
             // score: 0,
             // correctSide: null,
         }
@@ -56,9 +58,9 @@ class Rating extends Component {
         }
 
         if (condition === 0) {
-            this.setState({
-                correctAnswer: "No"
-            })
+            // this.setState({
+            //     correctAnswer: "No"
+            // })
 
             console.log("Absent Images Length: " + absentImages.length)
 
@@ -69,9 +71,9 @@ class Rating extends Component {
 
             return image
         } else {
-            this.setState({
-                correctAnswer: "Yes"
-            })
+            // this.setState({
+            //     correctAnswer: "Yes"
+            // })
 
             console.log("Present Images Length: " + presentImages.length)
 
@@ -84,40 +86,42 @@ class Rating extends Component {
         }
     }
 
-    // processSelection(selectedSide) {
-    //     this.setState({
-    //         clickDisabled: true,
-    //         keyDisabled: true,
-    //         totalAnswered: this.state.totalAnswered + 1,
-    //     });
+    processSelection() {
+        let image = document.getElementById("medical-scan");
 
-    //     if (selectedSide === this.state.correctSide) {
-    //         this.setState({
-    //             score: (this.state.correct + 1)/(this.state.totalAnswered + 1),
-    //             correct: this.state.correct + 1
-    //         })
-    //     } else {
-    //        this.setState({
-    //             score: this.state.correct/(this.state.totalAnswered + 1),
-    //         })
-    //     }
+        fadeOutAndfadeIn(image, this.newImage())
 
-    //     let nextPair = this.newPair()
-    //     if (nextPair.length) {
-    //         let currentLeft = document.getElementById("scan-left");
-    //         let currentRight = document.getElementById("scan-right");
+        this.setState({
+            isDisabled: true,
+            totalAnswered: this.state.totalAnswered + 1,
+        });
 
-    //         fadeOutAndfadeIn(currentLeft, nextPair[0])
-    //         fadeOutAndfadeIn(currentRight, nextPair[1])
+        // if (selectedSide === this.state.correctSide) {
+        //     this.setState({
+        //         score: (this.state.correct + 1)/(this.state.totalAnswered + 1),
+        //         correct: this.state.correct + 1
+        //     })
+        // } else {
+        //    this.setState({
+        //         score: this.state.correct/(this.state.totalAnswered + 1),
+        //     })
+        // }
 
-    //         setTimeout(() => {
-    //             this.setState({
-    //                 clickDisabled: false,
-    //                 keyDisabled: false
-    //             });
-    //         }, 2000);
-    //     }
-    // }
+        // let nextPair = this.newPair()
+        // if (nextPair.length) {
+        //     let currentLeft = document.getElementById("scan-left");
+        //     let currentRight = document.getElementById("scan-right");
+
+        //     fadeOutAndfadeIn(currentLeft, nextPair[0])
+        //     fadeOutAndfadeIn(currentRight, nextPair[1])
+
+        setTimeout(() => {
+            this.setState({
+                isDisabled: false
+            });
+        }, 2000);
+        // }
+    }
 
 
     handleOnChange = (value) => {
@@ -155,37 +159,113 @@ class Rating extends Component {
                     <div class="center-right">
                         <Timer/>
 
-                        <Slider
+                        <Slider 
+                            style={{
+                                marginTop:"10vh", 
+                                marginLeft: "5vw", 
+                                marginBottom: "10vh", 
+                                width:"40vw",
+                                fontFamily: "cursive",
+                            }}
                             min={-10}
                             max={10}
                             step={1}
+                            disabled={this.state.isDisabled}
                             value={this.state.selectedValue}
                             onChange={this.handleOnChange}
-                            keepTooltip={true}
-                            // getAriaValueText={this.state.selectedValue}
-                            tooltip={true}
-                            // marks={marks}
-                            // valueLabelDisplay={"on"}
-                            
-                        >
-                        </Slider>
+                            marks={{
+                                "-10":{
+                                    style: {fontSize: "1.3em", color: "black"},
+                                    label: <div>10<br></br><strong style={{color: "red"}}>No signal</strong></div>
+                                },
+                                "-9":{
+                                    style: {fontSize: "1.3em", color: "black"},
+                                    label: -9
+                                },
+                                "-8":{
+                                    style: {fontSize: "1.3em", color: "black"},
+                                    label: -8
+                                },
+                                "-7":{
+                                    style: {fontSize: "1.3em", color: "black"},
+                                    label: -7
+                                },
+                                "-6":{
+                                    style: {fontSize: "1.3em", color: "black"},
+                                    label: -6
+                                },
+                                "-5":{
+                                    style: {fontSize: "1.3em", color: "black"},
+                                    label: -5
+                                },
+                                "-4":{
+                                    style: {fontSize: "1.3em", color: "black"},
+                                    label: -4
+                                },
+                                "-3":{
+                                    style: {fontSize: "1.3em", color: "black"},
+                                    label: -3
+                                },
+                                "-2":{
+                                    style: {fontSize: "1.3em", color: "black"},
+                                    label: -2
+                                },
+                                "-1":{
+                                    style: {fontSize: "1.3em", color: "black"},
+                                    label: -1
+                                },
+                                0:{
+                                    style: {fontSize: "1.3em", color: "black"},
+                                    label: 0
+                                },
+                                1:{
+                                    style: {fontSize: "1.3em", color: "black"},
+                                    label: 1
+                                },
+                                2:{
+                                    style: {fontSize: "1.3em", color: "black"},
+                                    label: 2
+                                },
+                                3:{
+                                    style: {fontSize: "1.3em", color: "black"},
+                                    label: 3
+                                },
+                                4:{
+                                    style: {fontSize: "1.3em", color: "black"},
+                                    label: 4
+                                },
+                                5:{
+                                    style: {fontSize: "1.3em", color: "black"},
+                                    label: 5
+                                },
+                                6:{
+                                    style: {fontSize: "1.3em", color: "black"},
+                                    label: 6
+                                },
+                                7:{
+                                    style: {fontSize: "1.3em", color: "black"},
+                                    label: 7
+                                },
+                                8:{
+                                    style: {fontSize: "1.3em", color: "black"},
+                                    label: 8
+                                },
+                                9:{
+                                    style: {fontSize: "1.3em", color: "black"},
+                                    label: 9
+                                },
+                                10:{
+                                    style: {fontSize: "1.3em", color: "black"},
+                                    label: <div>10<br></br><strong style={{color: "blue"}}>Signal exists</strong></div>
+                                }
+                            }}
+                        />
 
-                        <div class="sliderticks">
-                            <p>-10</p>
-                            <p>-8</p>
-                            <p>-6</p>
-                            <p>-4</p>
-                            <p>-2</p>
-                            <p>0</p>
-                            <p>2</p>
-                            <p>4</p>
-                            <p>6</p>
-                            <p>8</p>
-                            <p>10</p>
-                        </div>
-
-                        {/* <button>Confirm rating</button>
-                        <div>{this.state.selectedValue}</div> */}
+                        <button 
+                            style={{marginLeft: "22vw"}}
+                            disabled={this.state.isDisabled}
+                            onClick={() => this.processSelection()}>Confirm rating</button>
+                        {/* <div>{this.state.selectedValue}</div> */}
                         
                     </div>
                 </div>
