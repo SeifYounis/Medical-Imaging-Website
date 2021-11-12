@@ -120,7 +120,6 @@ class Rating extends Component {
                 isDisabled: false
             });
         }, 2000);
-        // }
     }
 
 
