@@ -11,9 +11,11 @@ function importAll(r) {
   }
 
 var presentImages = importAll(require.context('../images/targetPresentImages', false, /\.(png|jpe?g|svg)$/));
+var presentAnswerImages = importAll(require.context('../images/targetPresentAnswerImages', false, /\.(png|jpe?g|svg)$/));
 var absentImages = importAll(require.context('../images/targetAbsentImages', false, /\.(png|jpe?g|svg)$/));
 
 export {
     presentImages,
-    absentImages
+    absentImages,
+    presentAnswerImages
 }

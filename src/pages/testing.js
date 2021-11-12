@@ -3,7 +3,8 @@ import '../styles/testing.css'
 import { fadeOutAndfadeIn } from '../assets/fadingAnimation'
 import {
     presentImages,
-    absentImages
+    absentImages,
+    presentAnswerImages
 } from '../assets/loadImages'
 import { Timer } from '../assets/timer'
 
@@ -27,13 +28,14 @@ class Testing extends Component {
             totalAnswered: 0,
             score: 0,
             correctAnswer: null,
-            scanName: null,
+            answerImage: null
         }
     }
 
     // Load new image
     newImage() {
         console.log(presentImages)
+        console.log(presentAnswerImages)
 
         let random = (min, max) => {
             let num = Math.random() * (max - min) + min;
@@ -56,7 +58,7 @@ class Testing extends Component {
 
         if (condition === 0) {
             this.setState({
-                correctAnswer: "No"
+                correctAnswer: "Absent"
             })
 
             // console.log("Absent Images Length: " + absentImages.length)
@@ -69,15 +71,21 @@ class Testing extends Component {
             return image
         } else {
             this.setState({
-                correctAnswer: "Yes"
+                correctAnswer: "Present"
             })
 
             // console.log("Present Images Length: " + presentImages.length)
 
             let index = random(0, presentImages.length - 1);
             let image = presentImages[index].default
+            let answerImage = presentAnswerImages[index].default
+
+            this.setState({
+                answerImage: answerImage
+            })
 
             presentImages.splice(index, 1);
+            presentAnswerImages.splice(index, 1);
 
             return image
         }
@@ -89,6 +97,7 @@ class Testing extends Component {
 
         if (this.state.totalAnswered < 20) {
             var resultContainer;
+            // var imageName;
 
             if (selectedAnswer === this.state.correctAnswer) {
                 resultContainer = document.getElementById('correct')
@@ -112,15 +121,20 @@ class Testing extends Component {
 
             if (this.props.type === "training") {
                 resultContainer.style.display = "block";
-                document.getElementById('testing-container').style.display = "none";
+                document.getElementById('split-right').style.display = "none";
+
+                if(this.state.correctAnswer === "Present") {
+                    document.getElementById('medical-scan').src = this.state.answerImage
+                }
 
                 setTimeout(() => {
-                    document.getElementById('testing-container').style.display = "block";
+                    document.getElementById('split-right').style.display = "block";
                     resultContainer.style.display = "none";
                 }, 2000)
             }
 
             let image = document.getElementById("medical-scan");
+
             setTimeout(() => {
                 fadeOutAndfadeIn(image, this.newImage());
             }, 2000)
@@ -155,13 +169,13 @@ class Testing extends Component {
                             <button
                                 id="scan-button"
                                 disabled={this.state.isDisabled}
-                                onClick={() => this.processSelection("Yes")}>
+                                onClick={() => this.processSelection("Present")}>
                                 <img alt="medical-scan" id="medical-scan"/>
                             </button>
                         </div>
                     </div>
 
-                    <div class="split right">
+                    <div class="split right" id="split-right">
                         <div class="top-right">
                             <h1 class="prompt-testing">Click on the image if you believe it contains a signal. Otherwise, click 'No'</h1>
                         </div>
@@ -169,7 +183,7 @@ class Testing extends Component {
                         <div class="center-right">
                             <button class="no-button" id="no-button"
                                 disabled={this.state.isDisabled}
-                                onClick={() => this.processSelection("No")}
+                                onClick={() => this.processSelection("Absent")}
                             >No</button>
 
                             <Timer/>

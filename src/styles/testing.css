@@ -71,14 +71,14 @@
 
 /* Definitely repetitive, but unable to fix it currently */
 
-#feedback-container > #correct {
+#feedback-container > #correct, #feedback-container > #incorrect {
   display: none;
   position:fixed;
   text-align: center;
   height: 100%;
-  width: 100%;
+  width: 50%;
   top: 0;
-  left: 0;
+  left: 50%;
   padding-top: 45vh;
   font-weight: bold;
   font-size: 200%;
@@ -90,9 +90,9 @@
   position:fixed;
   text-align: center;
   height: 100%;
-  width: 100%;
+  width: 50%;
   top: 0;
-  left: 0;
+  left: 50%;
   padding-top: 45vh;
   font-weight: bold;
   font-size: 200%;

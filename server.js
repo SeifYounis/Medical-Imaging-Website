@@ -1,5 +1,3 @@
-// To see heroku console output, do heroku logs --tail
-
 // Query I used to make session database table
 // CREATE TABLE IF NOT EXISTS myschema.session (
 //   sid varchar NOT NULL COLLATE "default",
@@ -18,7 +16,6 @@ const port = process.env.PORT || 3000;
 
 const express = require('express')
 const session = require('express-session');
-// const cookieParser = require('cookie-parser');
 const app = express()
 
 const {Pool} = require('pg')
@@ -55,6 +52,8 @@ app.use(session({
   //   // domain: 'seif-reader-study.herokuapp.com',
   // }
 }))
+
+// console.log(new Date().toISOString())
 
 // Used to parse request data that sent from web pages in JSON format
 app.use(express.json())
@@ -101,6 +100,7 @@ app.post('/postGrade', function(req, res) {
 //   res.send('My string is '+req.session.somedata+' and my object is '+JSON.stringify(req.session.evenobjects));
 // });
 
+// As an admin, unlock the testing section for students to take
 app.post('/unlock-testing', function (req, res) {
   pool.connect((err) => {
     if(err) throw err;
@@ -112,6 +112,7 @@ app.post('/unlock-testing', function (req, res) {
   })
 })
 
+// Check if admin has granted access to the testing section
 app.get('/unlocked-testing', function (req, res) {
   pool.connect((err) => {
     if(err) throw err;
@@ -124,20 +125,6 @@ app.get('/unlocked-testing', function (req, res) {
     res.status(200).json(result.rows[0])
   })
 })
-
-// app.post('/custompage', function(req, res){
-//   if(req.session.page_views){
-//      req.session.page_views++;
-//      res.send("You visited this page " + req.session.page_views + " times");
-//   } else {
-//      req.session.page_views = 1;
-//      res.send("Welcome to this page for the first time!");
-//   }
-// });
-
-// app.get('/getsession', function(req, res) {
-//   res.send(req.session.canvas_lti_launch_params);
-// })
 
 app.get('/get-username', (req, res) => {
   var username;
