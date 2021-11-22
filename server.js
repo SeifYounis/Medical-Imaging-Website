@@ -12,6 +12,7 @@
 require('dotenv').config()
 
 const path = require('path')
+const {spawn} = require('child_process');
 const port = process.env.PORT || 3000;
 
 const express = require('express')
@@ -52,8 +53,6 @@ app.use(session({
   //   // domain: 'seif-reader-study.herokuapp.com',
   // }
 }))
-
-// console.log(new Date().toISOString())
 
 // Used to parse request data that sent from web pages in JSON format
 app.use(express.json())
@@ -99,6 +98,27 @@ app.post('/postGrade', function(req, res) {
 // app.get('/mysession',function(req,res,next){
 //   res.send('My string is '+req.session.somedata+' and my object is '+JSON.stringify(req.session.evenobjects));
 // });
+
+app.post('/add-selection', (req, res) => {
+  pool.connect((err) => {
+    if(err) throw err;
+  })
+
+  console.log(req.body)
+
+  /* Answer_date is of type 'timestamp with time zone' in PostgreSQL.*/
+  pool.query("INSERT INTO students(session_id, student_id, username, assessment, prompt_image, answer, solution, answer_date) \
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8)", [
+      req.sessionID,
+      req.session.student_id,
+      req.session.username,
+      req.body.assessment,
+      req.body.promptImage,
+      req.body.answer,
+      req.body.solution,
+      req.body.answerDate,
+  ])
+})
 
 // As an admin, unlock the testing section for students to take
 app.post('/unlock-testing', function (req, res) {
@@ -178,6 +198,24 @@ app.get('/', function(req, res) {
   res.sendFile(path.join(__dirname, 'static', 'main.html'))  
 })
 
+app.get('/test-python', (req, res) => {
+  var dataToSend;
+  // spawn new child process to call the python script
+  const python = spawn('python', ['./src/assets/test.py']);
+  // collect data from script
+  python.stdout.on('data', function (data) {
+   console.log('Pipe data from python script ...');
+   dataToSend = data.toString();
+  });
+  // in close event we are sure that stream from child process is closed
+  python.on('close', (code) => {
+  console.log(`child process close all stdio with code ${code}`);
+  // send data to browser
+  res.send(dataToSend)
+  });
+  
+ })
+
 // app.post('/testing', function(req, res) {
 //   // Get sent data.
 //   // var user = req.body;
@@ -210,12 +248,6 @@ app.use(express.static(path.join(__dirname, 'build')));
 app.get(/[a-z]+/, function (req, res) {
   res.sendFile(path.join(__dirname, 'build', 'index.html'));
 });
-
-// app.get('/getInfo', function (req, res) {
-//   const canvas_lti_launch_params = req.cookies.canvas_lti_launch_params;
-
-//   res.status(200).json({canvas_lti_launch_params: canvas_lti_launch_params})
-// })
 
 app.listen(port, function(){
   console.log( `Server is listening at http://localhost:${port}`);

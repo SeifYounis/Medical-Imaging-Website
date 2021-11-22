@@ -23,16 +23,16 @@ export function App() {
           <AccessTesting/>
         </Route>
         <Route path="/testing">
-          <Testing type="testing"/>
+          <Testing assessment="testing"/>
         </Route>
         <Route path="/training">
-          <Testing type="training"/>
+          <Testing assessment="training"/>
         </Route>
         <Route path="/rating">
-          <Rating/>
+          <Rating assessment="rating"/>
         </Route>
         <Route path="/alternate-choice">
-          <AlternateChoices/>
+          <AlternateChoices assessment="2afc"/>
         </Route>
         <Route path="/login">
           <LoginPage/>

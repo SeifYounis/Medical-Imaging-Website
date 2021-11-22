@@ -6,6 +6,9 @@ import {
     absentImages
 } from '../assets/loadImages'
 
+// Signal absent image in prompt_image and signal present image in solution
+// Image selected will go into answer
+
 class AlternateChoices extends Component {
     constructor() {
         super();
@@ -16,7 +19,7 @@ class AlternateChoices extends Component {
             correct: 0,
             totalAnswered: 0,
             score: 0,
-            correctSide: null,
+            solution: null,
         }
     }
 
@@ -50,14 +53,14 @@ class AlternateChoices extends Component {
             // Put correct image on left and set left button as correct answer
             if (side === 0) {
                 this.setState({
-                    correctSide: "Left"
+                    solution: "Left image contains signal"
                 })
 
                 leftImage = presentImage
                 rightImage = absentImage
             } else {
                 this.setState({
-                    correctSide: "Right"
+                    solution: "Right image contains signal"
                 })
 
                 leftImage = absentImage
@@ -77,7 +80,7 @@ class AlternateChoices extends Component {
             totalAnswered: this.state.totalAnswered + 1,
         });
 
-        if (selectedSide === this.state.correctSide) {
+        if (selectedSide === this.state.solution) {
             this.setState({
                 score: (this.state.correct + 1)/(this.state.totalAnswered + 1),
                 correct: this.state.correct + 1
@@ -103,6 +106,24 @@ class AlternateChoices extends Component {
                 });
             }, 2000);
         }
+
+        // fetch('/add-selection', {
+        //     method: 'POST',
+        //     body: JSON.stringify({
+        //         assessment: this.props.assessment,
+        //         promptImage: this.state.promptImage,
+        //         answer: selectedAnswer,
+        //         answerDate: new Date().toLocaleString(),
+        //         solution: this.state.solution
+        //     }),
+        //     headers: {
+        //         'content-Type': 'application/json'
+        //     },
+        // }).then(function (response) {
+        //     return response
+        // }).then(function (body) {
+        //     console.log(body);
+        // });
     }
 
     componentDidMount() {
@@ -118,11 +139,11 @@ class AlternateChoices extends Component {
                 if (event.key === "f" || event.key === "j") {
 
                     if (event.key === "f") {
-                        this.processSelection("Left")
+                        this.processSelection("Left image contains signal")
                     }
     
                     else if (event.key === "j") {
-                        this.processSelection("Right")
+                        this.processSelection("Right image contains signal")
                     }
                 }
             }

@@ -12,7 +12,7 @@ conn = psycopg2.connect(DATABASE_URL, sslmode='require')
 
 cur = conn.cursor()
 
-# cur.execute("CREATE TABLE test (id serial PRIMARY KEY, num integer, data varchar);")
+cur.execute("CREATE TABLE test (id serial PRIMARY KEY, num integer, data varchar);")
 
 # Pass data to fill a query placeholders and let Psycopg perform
 # the correct conversion (no more SQL injections!)

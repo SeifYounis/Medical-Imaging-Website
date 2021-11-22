@@ -104,28 +104,7 @@ export class Timer extends Component {
             }
 
             if (this.timeLeft === 0) {
-                clearInterval(this.timerInterval);
-
-                page.setState({
-                    score: page.state.correct/(page.state.totalAnswered + 1),
-                    isDisabled: true,
-                    totalAnswered: page.state.totalAnswered + 1,
-                })
-    
-                fadeOutAndfadeIn(currentImage, page.newImage());
-        
-                setTimeout(
-                    function () {
-                        page.setState({
-                            isDisabled: false
-                        });
-                    },
-                    2000
-                );
-
-                if (page.state.totalAnswered < 20) {
-                    this.startTimer(page)
-                }
+                page.processSelection("Did not answer")
             }
         }, 1000 * 1);
     }

@@ -1,6 +1,4 @@
 import React, { Component } from 'react'
-// import Slider from 'react-rangeslider'
-// import 'react-rangeslider/lib/index.css';
 import Slider from 'rc-slider';
 import 'rc-slider/assets/index.css';
 import '../styles/rating.css'
@@ -12,6 +10,11 @@ import {
 import { Timer } from '../assets/timer';
 
 var timer = new Timer();
+
+// What is did not answer?
+// How can we use this for 2afc?
+// Left rating at 0 and it timed out: no activity
+// Rating at 0 and confirmed/everything else: intentional answer
 
 // Every selection contains the following information
 
@@ -29,10 +32,8 @@ class Rating extends Component {
             isDisabled: false,
             selectedValue: 0,
             totalAnswered: 0,
-            // ratings: []
-            // correct: 0,
-            // score: 0,
-            // correctSide: null,
+            promptImage: null,
+            solution: null
         }
     }
 
@@ -45,6 +46,7 @@ class Rating extends Component {
         };
 
         var condition;
+        var image
 
         if (!absentImages.length && !presentImages.length) {
             clearInterval(timer.timerInterval);
@@ -58,43 +60,38 @@ class Rating extends Component {
         }
 
         if (condition === 0) {
-            // this.setState({
-            //     correctAnswer: "No"
-            // })
+            this.setState({
+                solution: "No signal present in image"
+            })
 
             console.log("Absent Images Length: " + absentImages.length)
 
             let index = random(0, absentImages.length - 1);
-            let image = absentImages[index].default
+            image = absentImages[index].default
 
             absentImages.splice(index, 1);
-
-            return image
         } else {
-            // this.setState({
-            //     correctAnswer: "Yes"
-            // })
+            this.setState({
+                solution: "Signal present in image"
+            })
 
             console.log("Present Images Length: " + presentImages.length)
 
             let index = random(0, presentImages.length - 1);
-            let image = presentImages[index].default
+            image = presentImages[index].default
 
             presentImages.splice(index, 1);
-
-            return image
         }
-    }
-
-    processSelection() {
-        let image = document.getElementById("medical-scan");
-
-        fadeOutAndfadeIn(image, this.newImage())
 
         this.setState({
-            isDisabled: true,
-            totalAnswered: this.state.totalAnswered + 1,
-        });
+            promptImage: image
+        })
+
+        return image
+    }
+
+    processSelection(selectedValue) {
+        clearInterval(timer.timerInterval);
 
         // if (selectedSide === this.state.correctSide) {
         //     this.setState({
@@ -107,19 +104,42 @@ class Rating extends Component {
         //     })
         // }
 
-        // let nextPair = this.newPair()
-        // if (nextPair.length) {
-        //     let currentLeft = document.getElementById("scan-left");
-        //     let currentRight = document.getElementById("scan-right");
-
-        //     fadeOutAndfadeIn(currentLeft, nextPair[0])
-        //     fadeOutAndfadeIn(currentRight, nextPair[1])
-
-        setTimeout(() => {
+        if (this.state.totalAnswered < 20) {
             this.setState({
-                isDisabled: false
+                isDisabled: true,
+                totalAnswered: this.state.totalAnswered + 1,
             });
-        }, 2000);
+
+            let image = document.getElementById("medical-scan");
+
+            fetch('/add-selection', {
+                method: 'POST',
+                body: JSON.stringify({
+                    assessment: this.props.assessment,
+                    promptImage: this.state.promptImage,
+                    answer: selectedValue,
+                    answerDate: new Date().toLocaleString(),
+                    solution: this.state.solution
+                }),
+                headers: {
+                    'content-Type': 'application/json'
+                },
+            }).then(function (response) {
+                return response
+            }).then(function (body) {
+                console.log(body);
+            });
+
+            fadeOutAndfadeIn(image, this.newImage());
+
+            setTimeout(() => {
+                this.setState({
+                    isDisabled: false
+                });
+            }, 2000);
+
+            timer.startTimer(this)
+        }
     }
 
 
@@ -127,6 +147,11 @@ class Rating extends Component {
         this.setState({
             selectedValue: value
         }) 
+
+        var slider = document.getElementsByClassName('slider')[0]
+
+        // console.log(slider)
+        // console.log(slider.marks)
     }
 
     componentDidMount() {
@@ -156,16 +181,29 @@ class Rating extends Component {
     
                 <div class="split right" id="split-rating">
                     <div class="center-right">
-                        <Timer/>
-
                         <Slider 
+                            className='slider'
+                            trackStyle={{ backgroundColor: 'yellow', height: 10 }}
                             style={{
                                 marginTop:"10vh", 
-                                marginLeft: "5vw", 
+                                marginLeft: "3vw", 
                                 marginBottom: "10vh", 
-                                width:"40vw",
+                                // transform: 'translate(-50%, -50%)',
+                                width:"44vw",
                                 fontFamily: "cursive",
+                                height: "10vh",
+                                // border: "solid 5px #000",
+                                // backgroundColor: "white",
                             }}
+                            handleStyle={{
+                                borderColor: 'white',
+                                height: 20,
+                                width: 20,
+                                // marginLeft: -14,
+                                // marginBottom: 10,
+                                backgroundColor: 'black',
+                            }}
+                            railStyle={{ backgroundColor: 'red', height: 10 }}
                             min={-10}
                             max={10}
                             step={1}
@@ -175,98 +213,63 @@ class Rating extends Component {
                             marks={{
                                 "-10":{
                                     style: {fontSize: "1.3em", color: "black"},
-                                    label: <div>10<br></br><strong style={{color: "red"}}>No signal</strong></div>
-                                },
-                                "-9":{
-                                    style: {fontSize: "1.3em", color: "black"},
-                                    label: -9
+                                    label: <div>10<br/> <br/> <br/><strong style={{color: "red", marginLeft: '3vw'}}>No signal</strong></div>
                                 },
                                 "-8":{
                                     style: {fontSize: "1.3em", color: "black"},
                                     label: -8
                                 },
-                                "-7":{
-                                    style: {fontSize: "1.3em", color: "black"},
-                                    label: -7
-                                },
                                 "-6":{
                                     style: {fontSize: "1.3em", color: "black"},
                                     label: -6
-                                },
-                                "-5":{
-                                    style: {fontSize: "1.3em", color: "black"},
-                                    label: -5
                                 },
                                 "-4":{
                                     style: {fontSize: "1.3em", color: "black"},
                                     label: -4
                                 },
-                                "-3":{
-                                    style: {fontSize: "1.3em", color: "black"},
-                                    label: -3
-                                },
                                 "-2":{
                                     style: {fontSize: "1.3em", color: "black"},
                                     label: -2
-                                },
-                                "-1":{
-                                    style: {fontSize: "1.3em", color: "black"},
-                                    label: -1
                                 },
                                 0:{
                                     style: {fontSize: "1.3em", color: "black"},
                                     label: 0
                                 },
-                                1:{
-                                    style: {fontSize: "1.3em", color: "black"},
-                                    label: 1
-                                },
                                 2:{
                                     style: {fontSize: "1.3em", color: "black"},
                                     label: 2
-                                },
-                                3:{
-                                    style: {fontSize: "1.3em", color: "black"},
-                                    label: 3
                                 },
                                 4:{
                                     style: {fontSize: "1.3em", color: "black"},
                                     label: 4
                                 },
-                                5:{
-                                    style: {fontSize: "1.3em", color: "black"},
-                                    label: 5
-                                },
                                 6:{
                                     style: {fontSize: "1.3em", color: "black"},
                                     label: 6
                                 },
-                                7:{
-                                    style: {fontSize: "1.3em", color: "black"},
-                                    label: 7
-                                },
+                                
                                 8:{
                                     style: {fontSize: "1.3em", color: "black"},
                                     label: 8
                                 },
-                                9:{
-                                    style: {fontSize: "1.3em", color: "black"},
-                                    label: 9
-                                },
+                                
                                 10:{
                                     style: {fontSize: "1.3em", color: "black"},
-                                    label: <div>10<br></br><strong style={{color: "blue"}}>Signal exists</strong></div>
+                                    label: <div>10<br/> <br/> <br/><strong style={{color: "blue"}}>Signal exists</strong></div>
                                 }
                             }}
                         />
 
                         <button 
-                            style={{marginLeft: "22vw"}}
+                            style={{marginLeft: "20vw"}}
                             disabled={this.state.isDisabled}
-                            onClick={() => this.processSelection()}>Confirm rating</button>
-                        {/* <div>{this.state.selectedValue}</div> */}
+                            onClick={() => {
+                                this.processSelection(this.state.selectedValue);
+                            }}>Confirm rating: {this.state.selectedValue}</button>
                         
                     </div>
+
+                    <Timer/>
                 </div>
             </body>
         )

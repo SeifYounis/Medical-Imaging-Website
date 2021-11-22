@@ -23,20 +23,20 @@ class Testing extends Component {
         super();
 
         this.state = {
+            promptImage: null,
+            // answer: null,
+            // answerDate: null,
+            solution: null,
+            answerImage: null,
             isDisabled: false,
             correct: 0,
             totalAnswered: 0,
-            score: 0,
-            correctAnswer: null,
-            answerImage: null
+            score: 0
         }
     }
 
     // Load new image
     newImage() {
-        console.log(presentImages)
-        console.log(presentAnswerImages)
-
         let random = (min, max) => {
             let num = Math.random() * (max - min) + min;
     
@@ -44,6 +44,7 @@ class Testing extends Component {
         };
 
         var condition;
+        var image;
 
         if (!absentImages.length && !presentImages.length) {
             clearInterval(timer.timerInterval);
@@ -58,37 +59,39 @@ class Testing extends Component {
 
         if (condition === 0) {
             this.setState({
-                correctAnswer: "Absent"
+                solution: "No signal present in image"
             })
 
-            // console.log("Absent Images Length: " + absentImages.length)
+            // console.log("No signal present in image Images Length: " + absentImages.length)
 
             let index = random(0, absentImages.length - 1);
-            let image = absentImages[index].default
+            image = absentImages[index].default
 
             absentImages.splice(index, 1);
-
-            return image
         } else {
             this.setState({
-                correctAnswer: "Present"
+                solution: "Signal present in image"
             })
 
-            // console.log("Present Images Length: " + presentImages.length)
+            // console.log("Signal Present in image Images Length: " + presentImages.length)
 
             let index = random(0, presentImages.length - 1);
-            let image = presentImages[index].default
-            let answerImage = presentAnswerImages[index].default
+            image = presentImages[index].default
 
+            let answerImage = presentAnswerImages[index].default
             this.setState({
                 answerImage: answerImage
             })
 
             presentImages.splice(index, 1);
             presentAnswerImages.splice(index, 1);
-
-            return image
         }
+
+        this.setState({
+            promptImage: image
+        })
+
+        return image
     }
 
     // Function for picking next image to display and transitioning to it
@@ -97,9 +100,8 @@ class Testing extends Component {
 
         if (this.state.totalAnswered < 20) {
             var resultContainer;
-            // var imageName;
 
-            if (selectedAnswer === this.state.correctAnswer) {
+            if (selectedAnswer === this.state.solution) {
                 resultContainer = document.getElementById('correct')
 
                 this.setState({
@@ -119,11 +121,29 @@ class Testing extends Component {
                 totalAnswered: this.state.totalAnswered + 1,
             });
 
-            if (this.props.type === "training") {
+            fetch('/add-selection', {
+                method: 'POST',
+                body: JSON.stringify({
+                    assessment: this.props.assessment,
+                    promptImage: this.state.promptImage,
+                    answer: selectedAnswer,
+                    answerDate: new Date().toLocaleString(),
+                    solution: this.state.solution
+                }),
+                headers: {
+                    'content-Type': 'application/json'
+                },
+            }).then(function (response) {
+                return response
+            }).then(function (body) {
+                console.log(body);
+            });
+
+            if (this.props.assessment === "training") {
                 resultContainer.style.display = "block";
                 document.getElementById('split-right').style.display = "none";
 
-                if(this.state.correctAnswer === "Present") {
+                if(this.state.solution === "Signal present in image") {
                     document.getElementById('medical-scan').src = this.state.answerImage
                 }
 
@@ -139,14 +159,11 @@ class Testing extends Component {
                 fadeOutAndfadeIn(image, this.newImage());
             }, 2000)
     
-            setTimeout(
-                function () {
-                    this.setState({
-                        isDisabled: false
-                    });
-                }.bind(this),
-                3750
-            );
+            setTimeout(() => {
+                this.setState({
+                    isDisabled: false
+                });
+            }, 3750);
 
             setTimeout(() => {
                 timer.startTimer(this);
@@ -169,7 +186,12 @@ class Testing extends Component {
                             <button
                                 id="scan-button"
                                 disabled={this.state.isDisabled}
-                                onClick={() => this.processSelection("Present")}>
+                                onClick={() => {
+                                    this.processSelection("Signal present in image");
+                                    // setTimeout(() => {
+                                    //     timer.startTimer(this);
+                                    // }, 2000)
+                                }}>
                                 <img alt="medical-scan" id="medical-scan"/>
                             </button>
                         </div>
@@ -183,7 +205,12 @@ class Testing extends Component {
                         <div class="center-right">
                             <button class="no-button" id="no-button"
                                 disabled={this.state.isDisabled}
-                                onClick={() => this.processSelection("Absent")}
+                                onClick={() => {
+                                    this.processSelection("No signal present in image");
+                                    // setTimeout(() => {
+                                    //     timer.startTimer(this);
+                                    // }, 2000)
+                            }}
                             >No</button>
 
                             <Timer/>
