@@ -77,9 +77,7 @@ class LoginPage extends Component {
     componentDidMount() {
         fetch('/get-username')
         .then(res => {
-            if(res.ok) {
-                return res.json();
-            }
+            if(res.ok) return res.json();
         }).then(data => {
             if(data) {
                 console.log(data)

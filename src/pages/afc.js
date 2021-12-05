@@ -14,17 +14,24 @@ class AlternateChoices extends Component {
         super();
 
         this.state = {
+            leftImage: null,
+            rightImage: null,
+            promptImage: null,
+            solution: null,
+            // correct: 0,
+            // score: 0,
+            totalAnswered: 0,
             clickDisabled: false,
             keyDisabled: false,
-            correct: 0,
-            totalAnswered: 0,
-            score: 0,
-            solution: null,
+            testOver: false,
         }
     }
 
     // Load next pair of medical scans
     newPair() {
+        console.log(absentImages.length);
+        console.log(presentImages.length);
+
         if (absentImages.length && presentImages.length) {
             let random = (min, max) => {
                 let num = Math.random() * (max - min) + min;
@@ -52,20 +59,27 @@ class AlternateChoices extends Component {
 
             // Put correct image on left and set left button as correct answer
             if (side === 0) {
-                this.setState({
-                    solution: "Left image contains signal"
-                })
+                // this.setState({
+                //     solution: "Left image contains signal"
+                // })
 
                 leftImage = presentImage
                 rightImage = absentImage
             } else {
-                this.setState({
-                    solution: "Right image contains signal"
-                })
+                // this.setState({
+                //     solution: "Right image contains signal"
+                // })
 
                 leftImage = absentImage
                 rightImage = presentImage
             }
+
+            this.setState({
+                leftImage: leftImage,
+                rightImage: rightImage,
+                promptImage: absentImage,
+                solution: presentImage,
+            })
 
             return [leftImage, rightImage]
         }
@@ -74,56 +88,68 @@ class AlternateChoices extends Component {
     }
 
     processSelection(selectedSide) {
-        this.setState({
-            clickDisabled: true,
-            keyDisabled: true,
-            totalAnswered: this.state.totalAnswered + 1,
-        });
+        console.log(this.state.totalAnswered)
 
-        if (selectedSide === this.state.solution) {
+        if(this.state.totalAnswered < 10) {
             this.setState({
-                score: (this.state.correct + 1)/(this.state.totalAnswered + 1),
-                correct: this.state.correct + 1
-            })
-        } else {
-           this.setState({
-                score: this.state.correct/(this.state.totalAnswered + 1),
-            })
+                clickDisabled: true,
+                keyDisabled: true,
+                totalAnswered: this.state.totalAnswered + 1,
+            });
+    
+            console.log(selectedSide)
+
+            // if (selectedSide === this.state.solution) {
+            //     this.setState({
+            //         score: (this.state.correct + 1)/(this.state.totalAnswered + 1),
+            //         correct: this.state.correct + 1
+            //     })
+            // } else {
+            //    this.setState({
+            //         score: this.state.correct/(this.state.totalAnswered + 1),
+            //     })
+            // }
+    
+            let nextPair = this.newPair()
+            console.log(nextPair)
+
+            fetch('/add-selection', {
+                method: 'POST',
+                body: JSON.stringify({
+                    assessment: this.props.assessment,
+                    promptImage: this.state.promptImage,
+                    answer: selectedSide,
+                    answerDate: new Date().toLocaleString(),
+                    solution: this.state.solution
+                }),
+                headers: {
+                    'content-Type': 'application/json'
+                },
+            }).then(function (response) {
+                return response
+            }).then(function (body) {
+                console.log(body);
+            });
+
+            if (nextPair.length) {
+                let currentLeft = document.getElementById("scan-left");
+                let currentRight = document.getElementById("scan-right");
+    
+                fadeOutAndfadeIn(currentLeft, nextPair[0])
+                fadeOutAndfadeIn(currentRight, nextPair[1])
+    
+                setTimeout(() => {
+                    this.setState({
+                        clickDisabled: false,
+                        keyDisabled: false
+                    });
+                }, 2000);
+            } else {
+                setTimeout(() => {
+                    this.setState({testOver: true})
+                }, 2500)
+            }
         }
-
-        let nextPair = this.newPair()
-        if (nextPair.length) {
-            let currentLeft = document.getElementById("scan-left");
-            let currentRight = document.getElementById("scan-right");
-
-            fadeOutAndfadeIn(currentLeft, nextPair[0])
-            fadeOutAndfadeIn(currentRight, nextPair[1])
-
-            setTimeout(() => {
-                this.setState({
-                    clickDisabled: false,
-                    keyDisabled: false
-                });
-            }, 2000);
-        }
-
-        // fetch('/add-selection', {
-        //     method: 'POST',
-        //     body: JSON.stringify({
-        //         assessment: this.props.assessment,
-        //         promptImage: this.state.promptImage,
-        //         answer: selectedAnswer,
-        //         answerDate: new Date().toLocaleString(),
-        //         solution: this.state.solution
-        //     }),
-        //     headers: {
-        //         'content-Type': 'application/json'
-        //     },
-        // }).then(function (response) {
-        //     return response
-        // }).then(function (body) {
-        //     console.log(body);
-        // });
     }
 
     componentDidMount() {
@@ -139,18 +165,33 @@ class AlternateChoices extends Component {
                 if (event.key === "f" || event.key === "j") {
 
                     if (event.key === "f") {
-                        this.processSelection("Left image contains signal")
+                        let currentLeft = this.state.leftImage;
+                        this.processSelection(currentLeft)
                     }
     
                     else if (event.key === "j") {
-                        this.processSelection("Right image contains signal")
+                        let currentRight = this.state.rightImage;
+                        this.processSelection(currentRight)
                     }
                 }
             }
         });
+
+        var HOST = window.location.origin.replace(/^http/, 'ws')
+        var ws = new WebSocket(HOST);
+
+        // ws.onmessage = function (event) {
+        //    console.log(event.data)
+        // };
     }
 
     render() {
+        if(this.state.testOver) {
+            return (
+                <p>You have completed the <b>{this.props.assessment}</b> assessment</p>
+            )
+        }
+
         return (
             <body>
                 <div class="header" id="afc-prompt">
@@ -170,7 +211,10 @@ class AlternateChoices extends Component {
                             class="image-button" 
                             id="image-button"
                             disabled={this.state.clickDisabled}
-                            onClick={() => this.processSelection("Left")}>
+                            onClick={() => {
+                                let currentLeft = this.state.leftImage;
+                                this.processSelection(currentLeft)
+                            }}>
                             <img alt="Left scan" id="scan-left"/>
                         </button>
                     </div>
@@ -182,7 +226,10 @@ class AlternateChoices extends Component {
                             class="image-button" 
                             id="image-button"
                             disabled={this.state.clickDisabled}
-                            onClick={() => this.processSelection("Right")}>
+                            onClick={() =>{
+                                let currentRight = this.state.rightImage;
+                                this.processSelection(currentRight)
+                            }}>
                             <img alt="Right scan" id="scan-right"/>
                         </button>
                     </div>

@@ -24,14 +24,13 @@ class Testing extends Component {
 
         this.state = {
             promptImage: null,
-            // answer: null,
-            // answerDate: null,
             solution: null,
             answerImage: null,
             isDisabled: false,
             correct: 0,
             totalAnswered: 0,
-            score: 0
+            score: 0,
+            testOver: false
         }
     }
 
@@ -62,8 +61,6 @@ class Testing extends Component {
                 solution: "No signal present in image"
             })
 
-            // console.log("No signal present in image Images Length: " + absentImages.length)
-
             let index = random(0, absentImages.length - 1);
             image = absentImages[index].default
 
@@ -87,6 +84,8 @@ class Testing extends Component {
             presentAnswerImages.splice(index, 1);
         }
 
+        console.log(image)
+
         this.setState({
             promptImage: image
         })
@@ -99,7 +98,30 @@ class Testing extends Component {
         clearInterval(timer.timerInterval);
 
         if (this.state.totalAnswered < 20) {
+            fetch('/add-selection', {
+                method: 'POST',
+                body: JSON.stringify({
+                    assessment: this.props.assessment,
+                    promptImage: this.state.promptImage,
+                    answer: selectedAnswer,
+                    answerDate: new Date().toLocaleString(),
+                    solution: this.state.solution
+                }),
+                headers: {
+                    'content-Type': 'application/json'
+                },
+            }).then(function (response) {
+                return response
+            }).then(function (body) {
+                console.log(body);
+            }).catch(err=> {
+                console.log(err)
+            });
+
             var resultContainer;
+
+            let image = document.getElementById("medical-scan");
+            image.style.visibility = 'visible';
 
             if (selectedAnswer === this.state.solution) {
                 resultContainer = document.getElementById('correct')
@@ -121,23 +143,6 @@ class Testing extends Component {
                 totalAnswered: this.state.totalAnswered + 1,
             });
 
-            fetch('/add-selection', {
-                method: 'POST',
-                body: JSON.stringify({
-                    assessment: this.props.assessment,
-                    promptImage: this.state.promptImage,
-                    answer: selectedAnswer,
-                    answerDate: new Date().toLocaleString(),
-                    solution: this.state.solution
-                }),
-                headers: {
-                    'content-Type': 'application/json'
-                },
-            }).then(function (response) {
-                return response
-            }).then(function (body) {
-                console.log(body);
-            });
 
             if (this.props.assessment === "training") {
                 resultContainer.style.display = "block";
@@ -153,31 +158,42 @@ class Testing extends Component {
                 }, 2000)
             }
 
-            let image = document.getElementById("medical-scan");
-
-            setTimeout(() => {
-                fadeOutAndfadeIn(image, this.newImage());
-            }, 2000)
+            if(this.state.totalAnswered + 1 < 20) {
+                setTimeout(() => {
+                    fadeOutAndfadeIn(image, this.newImage());
+                }, 2000)
+        
+                setTimeout(() => {
+                    this.setState({
+                        isDisabled: false
+                    });
+                }, 3750);
     
-            setTimeout(() => {
-                this.setState({
-                    isDisabled: false
-                });
-            }, 3750);
+                setTimeout(() => {
+                    timer.startTimer(this);
+                }, 2000);
+            } else {
+                setTimeout(() => {
+                    this.setState({testOver: true})
+                }, 2500)
+            }
 
-            setTimeout(() => {
-                timer.startTimer(this);
-            }, 2000)
         }
     }
 
     componentDidMount() {
         document.getElementById('medical-scan').src = this.newImage()
-
+        
         timer.startTimer(this);
     }
 
     render() {
+        if(this.state.testOver) {
+            return (
+                <p>You have completed the <b>{this.props.assessment}</b> assessment</p>
+            )
+        }
+
         return (
             <body>
                 <div id="testing-container">
@@ -188,9 +204,6 @@ class Testing extends Component {
                                 disabled={this.state.isDisabled}
                                 onClick={() => {
                                     this.processSelection("Signal present in image");
-                                    // setTimeout(() => {
-                                    //     timer.startTimer(this);
-                                    // }, 2000)
                                 }}>
                                 <img alt="medical-scan" id="medical-scan"/>
                             </button>
@@ -210,8 +223,8 @@ class Testing extends Component {
                                     // setTimeout(() => {
                                     //     timer.startTimer(this);
                                     // }, 2000)
-                            }}
-                            >No</button>
+                                }}>No
+                            </button>
 
                             <Timer/>
                         </div>

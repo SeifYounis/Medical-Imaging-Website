@@ -11,8 +11,6 @@ import { Timer } from '../assets/timer';
 
 var timer = new Timer();
 
-// What is did not answer?
-// How can we use this for 2afc?
 // Left rating at 0 and it timed out: no activity
 // Rating at 0 and confirmed/everything else: intentional answer
 
@@ -29,11 +27,13 @@ class Rating extends Component {
         super();
 
         this.state = {
-            isDisabled: false,
-            selectedValue: 0,
+            buttonDisabled: true,
+            sliderDisabled: false,
+            selectedValue: null,
             totalAnswered: 0,
             promptImage: null,
-            solution: null
+            solution: null,
+            testOver: false,
         }
     }
 
@@ -64,7 +64,7 @@ class Rating extends Component {
                 solution: "No signal present in image"
             })
 
-            console.log("Absent Images Length: " + absentImages.length)
+            // console.log("Absent Images Length: " + absentImages.length)
 
             let index = random(0, absentImages.length - 1);
             image = absentImages[index].default
@@ -75,7 +75,7 @@ class Rating extends Component {
                 solution: "Signal present in image"
             })
 
-            console.log("Present Images Length: " + presentImages.length)
+            // console.log("Present Images Length: " + presentImages.length)
 
             let index = random(0, presentImages.length - 1);
             image = presentImages[index].default
@@ -91,6 +91,8 @@ class Rating extends Component {
     }
 
     processSelection(selectedValue) {
+        console.log(this.state.totalAnswered)
+
         clearInterval(timer.timerInterval);
 
         // if (selectedSide === this.state.correctSide) {
@@ -106,11 +108,16 @@ class Rating extends Component {
 
         if (this.state.totalAnswered < 20) {
             this.setState({
-                isDisabled: true,
+                buttonDisabled: true,
+                sliderDisabled: true,
                 totalAnswered: this.state.totalAnswered + 1,
+                selectedValue: null
             });
 
             let image = document.getElementById("medical-scan");
+            image.style.visibility = 'visible';
+
+            let date = new Date().toLocaleString();
 
             fetch('/add-selection', {
                 method: 'POST',
@@ -118,7 +125,7 @@ class Rating extends Component {
                     assessment: this.props.assessment,
                     promptImage: this.state.promptImage,
                     answer: selectedValue,
-                    answerDate: new Date().toLocaleString(),
+                    answerDate: date,
                     solution: this.state.solution
                 }),
                 headers: {
@@ -130,27 +137,31 @@ class Rating extends Component {
                 console.log(body);
             });
 
-            fadeOutAndfadeIn(image, this.newImage());
+            if(this.state.totalAnswered + 1 < 20) {
+                fadeOutAndfadeIn(image, this.newImage());
 
-            setTimeout(() => {
-                this.setState({
-                    isDisabled: false
-                });
-            }, 2000);
+                setTimeout(() => {
+                    this.setState({
+                        sliderDisabled: false,
+                    });
+                }, 2000);
 
-            timer.startTimer(this)
+                timer.startTimer(this)
+            } else {
+                setTimeout(() => {
+                    this.setState({testOver: true})
+                }, 2500)
+            }
         }
     }
 
 
     handleOnChange = (value) => {
         this.setState({
-            selectedValue: value
+            selectedValue: value,
+            buttonDisabled: false
         }) 
 
-        var slider = document.getElementsByClassName('slider')[0]
-
-        // console.log(slider)
         // console.log(slider.marks)
     }
 
@@ -161,6 +172,12 @@ class Rating extends Component {
     }
 
     render() {
+        if(this.state.testOver) {
+            return (
+                <p>You have completed the <b>{this.props.assessment}</b> assessment</p>
+            )
+        }
+
         return (
             <body>
                 <div class="header" id="rating-prompt">
@@ -207,7 +224,7 @@ class Rating extends Component {
                             min={-10}
                             max={10}
                             step={1}
-                            disabled={this.state.isDisabled}
+                            disabled={this.state.sliderDisabled}
                             value={this.state.selectedValue}
                             onChange={this.handleOnChange}
                             marks={{
@@ -261,8 +278,9 @@ class Rating extends Component {
                         />
 
                         <button 
+                            id='submit-rating'
                             style={{marginLeft: "20vw"}}
-                            disabled={this.state.isDisabled}
+                            disabled={this.state.buttonDisabled}
                             onClick={() => {
                                 this.processSelection(this.state.selectedValue);
                             }}>Confirm rating: {this.state.selectedValue}</button>

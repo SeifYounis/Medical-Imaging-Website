@@ -16,30 +16,10 @@
     width: 50%; 
 }
 
-.rangeslider-horizontal {
-    margin-left: 5vw;
-    margin-right: 5vw;
-    margin-top: 20vh;
-}
-
-.rangeslider-horizontal .rangeslider__fill {
-    background-color: #1e88e5;
-}
-
-.sliderticks {
-    display: flex;
-    justify-content: space-between;
-    padding: 0 80px;
-}
-
-.sliderticks p {
-    position: relative;
-    display: flex;
-    justify-content: center;
-    text-align: center;
-    width: 1px;
-    background: black;
-    height: 10px;
-    line-height: 40px;
-    margin: 0 20px 0 0;
+#submit-rating {
+    min-height: 3vh;
+    min-width: 3vw;
+    background-color:rgb(238, 138, 168);
+    font-size: 3vh;
+    font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif; 
 }

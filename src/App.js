@@ -32,7 +32,7 @@ export function App() {
           <Rating assessment="rating"/>
         </Route>
         <Route path="/alternate-choice">
-          <AlternateChoices assessment="2afc"/>
+          <AlternateChoices assessment="2AFC"/>
         </Route>
         <Route path="/login">
           <LoginPage/>

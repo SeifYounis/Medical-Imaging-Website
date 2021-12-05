@@ -3,7 +3,6 @@
  */
 
 import { Component } from "react";
-import { fadeOutAndfadeIn } from '../assets/fadingAnimation'
 import '../styles/timer.css'
 
 const FULL_DASH_ARRAY = 283;
@@ -104,7 +103,12 @@ export class Timer extends Component {
             }
 
             if (this.timeLeft === 0) {
-                page.processSelection("Did not answer")
+                if(page.props.assessment === "rating" && page.state.selectedValue !== null) {
+                    page.processSelection(page.state.selectedValue)
+                }
+                else {
+                    page.processSelection("Did not answer")
+                }
             }
         }, 1000 * 1);
     }
