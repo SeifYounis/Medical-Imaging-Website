@@ -32,17 +32,17 @@ var server = app.listen(port, function(){
 
 const wss = new Server({server})
 
-wss.on('connection', (ws) => {
-  console.log('Client connected');
+// wss.on('connection', (ws) => {
+//   console.log('Client connected');
 
-  // wss.clients.forEach((client) => {
-  //   client.send("Did you get this?");
-  // });
+//   // wss.clients.forEach((client) => {
+//   //   client.send("Did you get this?");
+//   // });
 
-  // console.log(wss.clients.size);
+//   // console.log(wss.clients.size);
 
-  ws.on('close', () => console.log('Client disconnected'));
-});
+//   ws.on('close', () => console.log('Client disconnected'));
+// });
 
 // app.use(cookieParser())
 
@@ -127,7 +127,7 @@ app.post('/add-selection', (req, res) => {
   console.log(req.body)
 
   /* Answer_date is of type 'timestamp with time zone' in PostgreSQL.*/
-  pool.query("INSERT INTO students(session_id, student_id, username, assessment, prompt_image, answer, solution, answer_date) \
+  pool.query("INSERT INTO results(session_id, student_id, username, assessment, prompt_image, answer, solution, answer_date) \
     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)", [
       req.sessionID,
       req.session.student_id,
@@ -141,7 +141,7 @@ app.post('/add-selection', (req, res) => {
     if (err) throw err;
   })
 
-  res.status(200).send("Answer successfully added to database");
+  res.status(200).send();
 })
 
 // As an admin, unlock the testing section for students to take
@@ -174,7 +174,15 @@ app.get('/get-username', (req, res) => {
     if(!username) {
       res.status(200).json({username: null})
     } else {
-      res.status(200).json(username);
+      pool.query("INSERT INTO active_connections(session_id, student_id, username) VALUES($1, $2, $3)", [
+        req.sessionID,
+        req.session.student_id,
+        req.session.username,
+      ], (err, result) => {
+        if (err) throw err;
+
+        res.status(200).json(username);
+      })
     }
   })
 })
@@ -191,6 +199,14 @@ app.post('/set-username', (req, res) => {
     username
   ], (err, result) => {
     if (err) throw err;
+
+    pool.query("INSERT INTO active_connections(session_id, student_id, username) VALUES($1, $2, $3)", [
+      req.sessionID,
+      req.session.student_id,
+      req.session.username,
+    ], (err, result) => {
+      if (err) throw err;
+    })
 
     // pool.end();
   })
@@ -217,6 +233,21 @@ app.get('/test-python', (req, res) => {
   // send data to browser
   res.send(dataToSend)
   });  
+})
+
+app.get('/test-nested-queries', (req, res) => {
+  pool.query("INSERT INTO students(student_id, username) VALUES ($1, $2)", [
+    "test-id",
+    "test-username"
+  ], (err, result) => {
+    if (err) throw err;
+
+    pool.query("SELECT * FROM students", (err, result) => {
+      if (err) throw err;
+
+      res.send(result.rows)
+    })
+  })
 })
 
 
