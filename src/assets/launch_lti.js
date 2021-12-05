@@ -81,8 +81,8 @@ exports.handleLaunch = (req, res, next) => {
 
           // Check if app was launched as an assignment by a student
           if (provider.outcome_service) {
-            // return res.redirect(301, '/login')
-            return res.redirect(301, '/testing');
+            return res.redirect(301, '/login')
+            // return res.redirect(301, '/testing');
           }
 
           // Check if app was launched by an instructor
