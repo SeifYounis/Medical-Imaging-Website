@@ -76,13 +76,27 @@ exports.handleLaunch = (req, res, next) => {
           req.session.canvas_lti_launch_params = provider.body;
           req.session.student_id = provider.body.user_id
 
-          console.log("Session at launch")
-          console.log(req.session)
-
           // Check if app was launched as an assignment by a student
           if (provider.outcome_service) {
-            return res.redirect(301, '/login')
-            // return res.redirect(301, '/testing');
+            if(provider.body.custom_canvas_assignment_title === "Reader Study Login") {
+              return res.redirect('/login')
+            }
+
+            if(provider.body.custom_canvas_assignment_title === "Testing") {
+              return res.redirect('/testing');
+            }
+
+            if(provider.body.custom_canvas_assignment_title === "Training") {
+              return res.redirect('/training');
+            }
+
+            if(provider.body.custom_canvas_assignment_title === "Rating") {
+              return res.redirect('/rating');
+            }
+
+            if(provider.body.custom_canvas_assignment_title === "Two Alternate Forced Choice") {
+              return res.redirect('/alternate-choice');
+            }
           }
 
           // Check if app was launched by an instructor

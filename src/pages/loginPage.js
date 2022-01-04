@@ -1,15 +1,11 @@
 import { Component } from 'react'
-import { withRouter } from 'react-router-dom';
 
 class LoginPage extends Component {
     constructor() {
         super();
 
-        // this.state = {
-        //     score: 0.000,
-        // }
-        
         this.state = {
+            score: 1,
             username: null,
             usernameSet: false
         }
@@ -18,19 +14,7 @@ class LoginPage extends Component {
     submitForm(e) {
         e.preventDefault();
 
-        // fetch('/postGrade', {
-        //     method: 'POST',
-        //     body: JSON.stringify(this.state),
-        //     headers: {
-        //         'content-Type': 'application/json'
-        //     },
-        // }).then(function (response) {
-        //     return response
-        // }).then(function (body) {
-        //     console.log(body);
-        // });
-
-        fetch('/set-username', {
+        fetch('/users/set-username', {
             method: 'POST',
             body: JSON.stringify({username: this.state.username}),
             headers: {
@@ -46,20 +30,33 @@ class LoginPage extends Component {
             usernameSet: true
         })
 
-        // this.props.history.push('/access-testing')
+        // Post grade to student's gradebook to indicate that they have successfully logged in
+        fetch('/postGrade', {
+            method: 'POST',
+            body: JSON.stringify({score: this.state.score}),
+            headers: {
+                'content-Type': 'application/json'
+            },
+        }).then(function (response) {
+            return response
+        }).then(function (body) {
+            console.log(body);
+        });
     }
 
     usernameExists() {
         if(this.state.usernameSet) {
             return(
                 <body>
-                    <p>Welcome, {this.state.username}</p>
+                    <p>Welcome, {this.state.username}. You may now proceed to the next assessment</p>
                 </body>
             )
         }
 
         return(
             <div>
+                <h1>Welcome to the reader study</h1>
+                <h2>Before beginning the assessments, please enter a username using the form below</h2>
                 <form onSubmit={this.submitForm.bind(this)}>
                     <input
                         id="user-login"
@@ -75,13 +72,11 @@ class LoginPage extends Component {
     }
 
     componentDidMount() {
-        fetch('/get-username')
+        fetch('/users/get-username')
         .then(res => {
             if(res.ok) return res.json();
         }).then(data => {
             if(data) {
-                console.log(data)
-
                 if(data.username) {
                     this.setState({
                         username: data.username,
@@ -94,36 +89,7 @@ class LoginPage extends Component {
 
     render() {
         return this.usernameExists()
-
-        // return (
-        //     <body>
-        //         {/* <div>
-        //             <form onSubmit={this.submitForm.bind(this)}>
-        //                 <input
-        //                     type="number"
-        //                     placeholder="Score"
-        //                     step="0.001"
-        //                     onChange={e => this.setState({ score: e.target.value })}>
-        //                 </input>
-
-        //                 <button type="submit">Begin</button>
-        //             </form>
-        //         </div> */}
-
-        //         <div>
-        //             <form onSubmit={this.submitForm.bind(this)}>
-        //                 <input
-        //                     type="text" 
-        //                     placeholder="Username" 
-        //                     onChange={e => this.setState({username: e.target.value})}>
-        //                 </input>
-
-        //                 <button type="submit">Begin</button>
-        //             </form>
-        //         </div>
-        //     </body>
-        // )
     }
 }
 
-export default withRouter(LoginPage);
+export default LoginPage;

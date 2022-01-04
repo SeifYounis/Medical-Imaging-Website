@@ -37,6 +37,9 @@ class Rating extends Component {
         }
     }
 
+    HOST = window.location.origin.replace(/^http/, 'ws')
+    ws = new WebSocket(this.HOST);
+
     // Load new image
     newImage() {
         let random = (min, max) => {
@@ -61,7 +64,7 @@ class Rating extends Component {
 
         if (condition === 0) {
             this.setState({
-                solution: "No signal present in image"
+                solution: "No signal"
             })
 
             // console.log("Absent Images Length: " + absentImages.length)
@@ -72,7 +75,7 @@ class Rating extends Component {
             absentImages.splice(index, 1);
         } else {
             this.setState({
-                solution: "Signal present in image"
+                solution: "Signal present"
             })
 
             // console.log("Present Images Length: " + presentImages.length)
@@ -137,6 +140,13 @@ class Rating extends Component {
                 console.log(body);
             });
 
+            // Update user entry in 'active_connections' table in database 
+            const wsData = JSON.stringify({
+                current_test: this.props.assessment,
+                last_answered: date
+            })
+            this.ws.send(wsData)
+
             if(this.state.totalAnswered + 1 < 20) {
                 fadeOutAndfadeIn(image, this.newImage());
 
@@ -161,8 +171,6 @@ class Rating extends Component {
             selectedValue: value,
             buttonDisabled: false
         }) 
-
-        // console.log(slider.marks)
     }
 
     componentDidMount() {

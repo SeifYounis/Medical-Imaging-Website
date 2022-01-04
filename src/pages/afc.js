@@ -27,6 +27,10 @@ class AlternateChoices extends Component {
         }
     }
 
+    // Set up web socket
+    HOST = window.location.origin.replace(/^http/, 'ws')
+    ws = new WebSocket(this.HOST);
+
     // Load next pair of medical scans
     newPair() {
         console.log(absentImages.length);
@@ -97,8 +101,6 @@ class AlternateChoices extends Component {
                 totalAnswered: this.state.totalAnswered + 1,
             });
     
-            console.log(selectedSide)
-
             // if (selectedSide === this.state.solution) {
             //     this.setState({
             //         score: (this.state.correct + 1)/(this.state.totalAnswered + 1),
@@ -110,8 +112,8 @@ class AlternateChoices extends Component {
             //     })
             // }
     
-            let nextPair = this.newPair()
-            console.log(nextPair)
+            let nextPair = this.newPair();
+            let date = new Date().toLocaleString();
 
             fetch('/add-selection', {
                 method: 'POST',
@@ -119,7 +121,7 @@ class AlternateChoices extends Component {
                     assessment: this.props.assessment,
                     promptImage: this.state.promptImage,
                     answer: selectedSide,
-                    answerDate: new Date().toLocaleString(),
+                    answerDate: date,
                     solution: this.state.solution
                 }),
                 headers: {
@@ -130,6 +132,13 @@ class AlternateChoices extends Component {
             }).then(function (body) {
                 console.log(body);
             });
+
+            // Update user entry in 'active_connections' table in database 
+            const wsData = JSON.stringify({
+                current_test: this.props.assessment,
+                last_answered: date
+            })
+            this.ws.send(wsData)
 
             if (nextPair.length) {
                 let currentLeft = document.getElementById("scan-left");
@@ -176,13 +185,6 @@ class AlternateChoices extends Component {
                 }
             }
         });
-
-        var HOST = window.location.origin.replace(/^http/, 'ws')
-        var ws = new WebSocket(HOST);
-
-        // ws.onmessage = function (event) {
-        //    console.log(event.data)
-        // };
     }
 
     render() {

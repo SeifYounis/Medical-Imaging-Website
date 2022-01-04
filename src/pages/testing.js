@@ -34,6 +34,10 @@ class Testing extends Component {
         }
     }
 
+    // Set up web socket
+    HOST = window.location.origin.replace(/^http/, 'ws')
+    ws = new WebSocket(this.HOST);
+
     // Load new image
     newImage() {
         let random = (min, max) => {
@@ -58,7 +62,7 @@ class Testing extends Component {
 
         if (condition === 0) {
             this.setState({
-                solution: "No signal present in image"
+                solution: "No signal"
             })
 
             let index = random(0, absentImages.length - 1);
@@ -67,10 +71,10 @@ class Testing extends Component {
             absentImages.splice(index, 1);
         } else {
             this.setState({
-                solution: "Signal present in image"
+                solution: "Signal present"
             })
 
-            // console.log("Signal Present in image Images Length: " + presentImages.length)
+            // console.log("Signal Present Images Length: " + presentImages.length)
 
             let index = random(0, presentImages.length - 1);
             image = presentImages[index].default
@@ -84,8 +88,6 @@ class Testing extends Component {
             presentAnswerImages.splice(index, 1);
         }
 
-        console.log(image)
-
         this.setState({
             promptImage: image
         })
@@ -98,13 +100,16 @@ class Testing extends Component {
         clearInterval(timer.timerInterval);
 
         if (this.state.totalAnswered < 20) {
+            let date = new Date().toLocaleString()
+
+            // Add selection data to 'results' table in database
             fetch('/add-selection', {
                 method: 'POST',
                 body: JSON.stringify({
                     assessment: this.props.assessment,
                     promptImage: this.state.promptImage,
                     answer: selectedAnswer,
-                    answerDate: new Date().toLocaleString(),
+                    answerDate: date,
                     solution: this.state.solution
                 }),
                 headers: {
@@ -117,6 +122,13 @@ class Testing extends Component {
             }).catch(err=> {
                 console.log(err)
             });
+
+            // Update user entry in 'active_connections' table in database 
+            const wsData = JSON.stringify({
+                current_test: this.props.assessment,
+                last_answered: date
+            })
+            this.ws.send(wsData)
 
             var resultContainer;
 
@@ -148,7 +160,7 @@ class Testing extends Component {
                 resultContainer.style.display = "block";
                 document.getElementById('split-right').style.display = "none";
 
-                if(this.state.solution === "Signal present in image") {
+                if(this.state.solution === "Signal present") {
                     document.getElementById('medical-scan').src = this.state.answerImage
                 }
 
@@ -203,7 +215,7 @@ class Testing extends Component {
                                 id="scan-button"
                                 disabled={this.state.isDisabled}
                                 onClick={() => {
-                                    this.processSelection("Signal present in image");
+                                    this.processSelection("Signal present");
                                 }}>
                                 <img alt="medical-scan" id="medical-scan"/>
                             </button>
@@ -219,10 +231,7 @@ class Testing extends Component {
                             <button class="no-button" id="no-button"
                                 disabled={this.state.isDisabled}
                                 onClick={() => {
-                                    this.processSelection("No signal present in image");
-                                    // setTimeout(() => {
-                                    //     timer.startTimer(this);
-                                    // }, 2000)
+                                    this.processSelection("No signal");
                                 }}>No
                             </button>
 

@@ -16,86 +16,35 @@ const {spawn} = require('child_process');
 const port = process.env.PORT || 3000;
 
 const express = require('express')
-const session = require('express-session');
 const app = express()
 
-const {Pool} = require('pg')
 const { Server } = require('ws');
-const PostgreSQLStore = require('connect-pg-simple')(session)
 
-const launch_lti = require('./src/assets/launch_lti.js')
+const users = require('./src/routes/users')
+const launch_lti = require('./src/routes/launch_lti')
+
 const lti = require('ims-lti');
 
-var server = app.listen(port, function(){
-  console.log( `Server is listening at http://localhost:${port}`);
-})
-
-const wss = new Server({server})
-
-// wss.on('connection', (ws) => {
-//   console.log('Client connected');
-
-//   // wss.clients.forEach((client) => {
-//   //   client.send("Did you get this?");
-//   // });
-
-//   // console.log(wss.clients.size);
-
-//   ws.on('close', () => console.log('Client disconnected'));
-// });
-
 // app.use(cookieParser())
+// app.set('trust proxy', 1)
 
-// Create and connect a new PostgreSQL database connection pool
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false
-  }
-})
-pool.connect((err) => {
-  if(err) throw err;
-  console.log('PostgreSQL Connected');
-})
+const pool = require('./src/util/db')
+const sess = require('./src/util/session')
 
-app.set('trust proxy', 1)
-
-app.use(session({
-  secret: process.env.SESSION_SECRET,
-  saveUninitialized: false,
-  resave: true,
-  store: new PostgreSQLStore({
-    conString: process.env.DATABASE_URL,
-    pool: pool,
-    schemaName: 'public',
-    tableName: 'session'
-  }),
-  // cookie: {
-  //   secure: true,
-  //   maxAge: 6 * 60 * 60 * 1000, // Cookie lasts 6 hours, after which time the assignment must be relaunched
-  //   sameSite: 'none',
-  //   // domain: 'seif-reader-study.herokuapp.com',
-  // }
-}))
+app.use(sess)
 
 // Used to parse request data that sent from web pages in JSON format
 app.use(express.json())
 app.use(express.urlencoded({extended: false}))
 
-// Custom router API for launch URL of app from Canvas
+app.use('/users', users)
+
+// Route for launch URL of app from Canvas assignment pages
 app.post('/launch', launch_lti.handleLaunch);
 
-// Custom router API for posting grade to student's profile
+// Route for posting grade to student's profile
 app.post('/postGrade', function(req, res) {
   const provider = new lti.Provider(process.env.CONSUMER_KEY, process.env.CONSUMER_SECRET, new lti.Stores.MemoryStore(), lti.HMAC_SHA1);
-
-  // console.log(req.cookies['connect.sid'])
-  // let sid = req.cookies['connect.sid'].substring(2);
-  // console.log(sid)
-
-  console.log("Session in /postGrade")
-  console.log(req.session)
-  console.log(req.sessionID)
 
   provider.valid_request(req, req.session.canvas_lti_launch_params, (_err, _isValid) => {
       provider.outcome_service.send_replace_result(parseFloat(req.body.score), (_err, _result) => {
@@ -111,17 +60,6 @@ app.post('/postGrade', function(req, res) {
   //     })
   // });
 })
-
-// app.get('/givemeasession',function(req,res,next){
-//   req.session.mybool = true;
-//   req.session.somedata = 'mystring';
-//   req.session.evenobjects = { data : 'somedata' };
-//   res.send('Session set!');
-// });
-
-// app.get('/mysession',function(req,res,next){
-//   res.send('My string is '+req.session.somedata+' and my object is '+JSON.stringify(req.session.evenobjects));
-// });
 
 app.post('/add-selection', (req, res) => {
   console.log(req.body)
@@ -140,8 +78,6 @@ app.post('/add-selection', (req, res) => {
   ], (err, result) => {
     if (err) throw err;
   })
-
-  res.status(200).send();
 })
 
 // As an admin, unlock the testing section for students to take
@@ -160,68 +96,10 @@ app.get('/unlocked-testing', function (req, res) {
   })
 })
 
-app.get('/get-username', (req, res) => {
-  var username;
-
-  // Do a PostgreSQL query
-  pool.query("SELECT username FROM students WHERE student_id=$1", [
-    req.session.student_id
-  ], (err, result) => {
-    if (err) throw err;
-
-    username = result.rows[0]
-
-    if(!username) {
-      res.status(200).json({username: null})
-    } else {
-      pool.query("INSERT INTO active_connections(session_id, student_id, username) VALUES($1, $2, $3)", [
-        req.sessionID,
-        req.session.student_id,
-        req.session.username,
-      ], (err, result) => {
-        if (err) throw err;
-
-        res.status(200).json(username);
-      })
-    }
-  })
-})
-
-app.post('/set-username', (req, res) => {
-  // Get sent data.
-  var username = req.body.username;
-
-  console.log(username)
-  
-  // Do a PostgreSQL query
-  pool.query("INSERT INTO students(student_id, username) VALUES ($1, $2)", [
-    req.session.student_id,
-    username
-  ], (err, result) => {
-    if (err) throw err;
-
-    pool.query("INSERT INTO active_connections(session_id, student_id, username) VALUES($1, $2, $3)", [
-      req.sessionID,
-      req.session.student_id,
-      req.session.username,
-    ], (err, result) => {
-      if (err) throw err;
-    })
-
-    // pool.end();
-  })
-})
-
-// Renders HTML file from Simplephy source code
-app.use(express.static(path.join(__dirname, 'static')));
-app.get('/', function(req, res) {
-  res.sendFile(path.join(__dirname, 'static', 'main.html'))  
-})
-
 app.get('/test-python', (req, res) => {
-  var dataToSend;
+  let dataToSend;
   // spawn new child process to call the python script
-  const python = spawn('python', ['./src/assets/test.py']);
+  const python = spawn('python', ['./src/scripts/test.py']);
   // collect data from script
   python.stdout.on('data', function (data) {
    console.log('Pipe data from python script ...');
@@ -235,28 +113,99 @@ app.get('/test-python', (req, res) => {
   });  
 })
 
-app.get('/test-nested-queries', (req, res) => {
-  pool.query("INSERT INTO students(student_id, username) VALUES ($1, $2)", [
-    "test-id",
-    "test-username"
-  ], (err, result) => {
-    if (err) throw err;
-
-    pool.query("SELECT * FROM students", (err, result) => {
-      if (err) throw err;
-
-      res.send(result.rows)
-    })
-  })
+// Renders HTML file from Simplephy source code
+app.use(express.static(path.join(__dirname, 'static')));
+app.get('/', function(req, res) {
+  res.sendFile(path.join(__dirname, 'static', 'main.html'))  
 })
 
-
-// pool.query(`SELECT * FROM students`, function (err, result) {
-//   if (err) throw err;
-// })
-
-// Renders HTML file generated by React build command
+// Renders HTML file generated by npm build command
 app.use(express.static(path.join(__dirname, 'build')));
 app.get(/[a-z]+/, function (req, res) {
   res.sendFile(path.join(__dirname, 'build', 'index.html'));
+});
+
+var server = app.listen(port, function(){
+  console.log( `Server is listening at port ${port}`);
+})
+
+/**
+ * Primary reference for capturing session data through web sockets
+ * https://github.com/websockets/ws/blob/master/examples/express-session-parse/index.js
+ */
+const wss = new Server({ noServer: true })
+
+server.on('upgrade', function (request, socket, head) {
+  // console.log('Parsing session from request...');
+
+  sess(request, {}, () => {
+    if (!request.sessionID) {
+      socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
+      socket.destroy();
+      return;
+    }
+
+    // console.log('Session is parsed!');
+
+    wss.handleUpgrade(request, socket, head, function (ws) {
+      wss.emit('connection', ws, request);
+    });
+  });
+});
+
+wss.on('connection', (ws, req) => { 
+  console.log('Connected')
+
+  let username;
+
+  // Retrieve current student's username
+  pool.query("SELECT username FROM students WHERE student_id=$1", [
+    req.session.student_id
+  ], (err, result) => {
+    if (err) throw err;
+
+    let retrieved;
+    retrieved = JSON.parse(JSON.stringify(result.rows[0]));
+    username = retrieved.username;
+
+    // Create new entry in 'active_connections' table in database
+    pool.query(`
+      INSERT INTO active_connections(session_id, student_id, username, active) 
+      VALUES($1, $2, $3, $4)`, [
+        req.sessionID,
+        req.session.student_id,
+        username,
+        true
+    ], (err, result) => {
+      if (err) throw err;
+    })
+  })
+
+  ws.on('message', (data) => {
+    console.log(`We got the username. It's ${username}`)
+
+    let connectionUpdate = JSON.parse(data)
+
+    let last_answered = connectionUpdate.last_answered;
+    let current_test = connectionUpdate.current_test;
+
+    pool.query("UPDATE active_connections SET last_answered=$1, current_test=$2 WHERE session_id=$3", [
+      last_answered,
+      current_test,
+      req.sessionID
+    ], (err, result) => {
+      if (err) throw err;
+    })
+  })
+
+  ws.on('close', () => {
+    console.log('Connection closed.')
+
+    pool.query("UPDATE active_connections SET active=$1 WHERE session_id=$2", [
+      false,
+      req.sessionID
+    ], (err, result) => {
+      if (err) throw err;
+    })
+  });
 });
