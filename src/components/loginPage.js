@@ -14,6 +14,7 @@ class LoginPage extends Component {
     submitForm(e) {
         e.preventDefault();
 
+        // Add new entry to 'students' database
         fetch('/users/set-username', {
             method: 'POST',
             body: JSON.stringify({username: this.state.username}),
@@ -31,7 +32,7 @@ class LoginPage extends Component {
         })
 
         // Post grade to student's gradebook to indicate that they have successfully logged in
-        fetch('/postGrade', {
+        fetch('/lti/post-grade', {
             method: 'POST',
             body: JSON.stringify({score: this.state.score}),
             headers: {
@@ -76,13 +77,11 @@ class LoginPage extends Component {
         .then(res => {
             if(res.ok) return res.json();
         }).then(data => {
-            if(data) {
-                if(data.username) {
-                    this.setState({
-                        username: data.username,
-                        usernameSet: true
-                    })
-                }
+            if(data.username) {
+                this.setState({
+                    username: data.username,
+                    usernameSet: true
+                })
             }
         }).catch(err => console.error(err));
     }

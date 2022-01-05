@@ -1,3 +1,14 @@
+// Query I used to make session database table
+// CREATE TABLE IF NOT EXISTS myschema.session (
+//   sid varchar NOT NULL COLLATE "default",
+//   sess json NOT NULL,
+//   expire timestamp(6) NOT NULL,
+//   CONSTRAINT "session_pkey" PRIMARY KEY ("sid")
+// );
+// CREATE INDEX IF NOT EXISTS "IDX_session_expire" ON myschema.session ("expire");
+
+// Query obtained here: https://medium.com/developer-rants/how-to-handle-sessions-properly-in-express-js-with-heroku-c35ea8c0e500
+
 require('dotenv').config()
 const pool = require('./db')
 

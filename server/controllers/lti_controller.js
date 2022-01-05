@@ -114,3 +114,16 @@ exports.handleLaunch = (req, res, next) => {
     });
   });
 };
+
+exports.postGrade = (req, res, next) => {
+  const provider = new lti.Provider(process.env.CONSUMER_KEY, process.env.CONSUMER_SECRET, nonceStore, lti.HMAC_SHA1);
+  
+  provider.valid_request(req, req.session.canvas_lti_launch_params, (_err, _isValid) => {
+      provider.outcome_service.send_replace_result(parseFloat(req.body.score), (_err, _result) => {
+          console.log("Graded")
+          return res.status(200).send("Grade successfully posted")
+      })
+  });
+
+  // console.log(req.cookies.canvas_lti_launch_params);
+}

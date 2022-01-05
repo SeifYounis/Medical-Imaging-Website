@@ -141,11 +141,11 @@ class Rating extends Component {
             });
 
             // Update user entry in 'active_connections' table in database 
-            const wsData = JSON.stringify({
-                current_test: this.props.assessment,
-                last_answered: date
-            })
-            this.ws.send(wsData)
+            // const wsData = JSON.stringify({
+            //     current_test: this.props.assessment,
+            //     last_answered: date
+            // })
+            // this.ws.send(wsData)
 
             if(this.state.totalAnswered + 1 < 20) {
                 fadeOutAndfadeIn(image, this.newImage());
@@ -174,6 +174,15 @@ class Rating extends Component {
     }
 
     componentDidMount() {
+        fetch('/users/get-username')
+        .then(res => {
+            if(res.ok) return res.json();
+        }).then(data => {
+            if(data.username) {
+                console.log(data.username)
+            }
+        }).catch(err => console.error(err));
+
         document.getElementById('medical-scan').src = this.newImage()
 
         timer.startTimer(this);

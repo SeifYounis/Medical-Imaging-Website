@@ -4,12 +4,12 @@ import {
   Route,
   BrowserRouter
 } from "react-router-dom";
-import AlternateChoices from './pages/afc';
-import LoginPage from './pages/loginPage';
-import Testing from './pages/testing';
-import Admin from './pages/admin';
-import AccessTesting from './pages/accessTesting'
-import Rating from './pages/rating';
+import AlternateChoices from './components/afc';
+import LoginPage from './components/loginPage';
+import Testing from './components/testing';
+import Admin from './components/admin';
+import AccessTesting from './components/accessTesting'
+import Rating from './components/rating';
 // import Home from './pages/home';
 
 export function App() {
