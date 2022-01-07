@@ -15,7 +15,7 @@ const sess = require('./util/session')
 app.use(sess)
 
 // app.use(cookieParser())
-// app.set('trust proxy', 1)
+app.set('trust proxy', 1)
 
 // Used to parse request data that sent from web pages in JSON format
 app.use(express.json())
@@ -88,7 +88,7 @@ app.get('/unlocked-testing', function (req, res) {
 app.get('/test-python', (req, res) => {
     let dataToSend;
     // spawn new child process to call the python script
-    const python = spawn('python', ['./src/scripts/test.py']);
+    const python = spawn('python', ['./scripts/test.py']);
     // collect data from script
     python.stdout.on('data', function (data) {
         console.log('Pipe data from python script ...');
