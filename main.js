@@ -8,14 +8,15 @@ const app = express()
 
 const users = require('./server/routes/users')
 const lti = require('./server/routes/lti')
+const adminRouter = require('./server/routes/adminRouter')
 
 const pool = require('./util/db')
 const sess = require('./util/session')
 
-app.use(sess)
+app.set('trust proxy', 1)
 
 // app.use(cookieParser())
-app.set('trust proxy', 1)
+app.use(sess)
 
 // Used to parse request data that sent from web pages in JSON format
 app.use(express.json())
@@ -23,6 +24,7 @@ app.use(express.urlencoded({ extended: false }))
 
 app.use('/users', users)
 app.use('/lti', lti)
+app.use('/admin', adminRouter)
 
 app.post('/add-selection', (req, res) => {
     console.log(req.body)

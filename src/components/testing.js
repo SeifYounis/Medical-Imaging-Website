@@ -1,4 +1,6 @@
 import { Component } from 'react'
+import { io } from "socket.io-client";
+
 import '../styles/testing.css'
 import { fadeOutAndfadeIn } from '../assets/fadingAnimation'
 import {
@@ -35,14 +37,16 @@ class Testing extends Component {
     }
 
     // Set up web socket
-    HOST = window.location.origin.replace(/^http/, 'ws')
-    ws = new WebSocket(this.HOST);
+    socket = io()
+
+    // HOST = window.location.origin.replace(/^http/, 'ws')
+    // ws = new WebSocket(this.HOST);
 
     // Load new image
     newImage() {
         let random = (min, max) => {
             let num = Math.random() * (max - min) + min;
-    
+
             return Math.round(num);
         };
 
@@ -119,7 +123,7 @@ class Testing extends Component {
                 return response
             }).then(function (body) {
                 console.log(body);
-            }).catch(err=> {
+            }).catch(err => {
                 console.log(err)
             });
 
@@ -139,14 +143,14 @@ class Testing extends Component {
                 resultContainer = document.getElementById('correct')
 
                 this.setState({
-                    score: (this.state.correct + 1)/(this.state.totalAnswered + 1),
+                    score: (this.state.correct + 1) / (this.state.totalAnswered + 1),
                     correct: this.state.correct + 1
                 })
             } else {
                 resultContainer = document.getElementById('incorrect')
 
                 this.setState({
-                    score: this.state.correct/(this.state.totalAnswered + 1),
+                    score: this.state.correct / (this.state.totalAnswered + 1),
                 })
             }
 
@@ -160,7 +164,7 @@ class Testing extends Component {
                 resultContainer.style.display = "block";
                 document.getElementById('split-right').style.display = "none";
 
-                if(this.state.solution === "Signal present") {
+                if (this.state.solution === "Signal present") {
                     document.getElementById('medical-scan').src = this.state.answerImage
                 }
 
@@ -170,48 +174,55 @@ class Testing extends Component {
                 }, 2000)
             }
 
-            if(this.state.totalAnswered + 1 < 20) {
+            if (this.state.totalAnswered + 1 < 20) {
                 setTimeout(() => {
                     fadeOutAndfadeIn(image, this.newImage());
                 }, 2000)
-        
+
                 setTimeout(() => {
                     this.setState({
                         isDisabled: false
                     });
                 }, 3750);
-    
+
                 setTimeout(() => {
                     timer.startTimer(this);
                 }, 2000);
             } else {
                 setTimeout(() => {
-                    this.setState({testOver: true})
+                    this.setState({ testOver: true })
                 }, 2500)
             }
-
         }
     }
 
     componentDidMount() {
         fetch('/users/get-username')
-        .then(res => {
-            if(res.ok) return res.json();
-        }).then(data => {
-            if(data.username) {
-                console.log(data.username)
-            }
-        }).catch(err => console.error(err));
+            .then(res => {
+                if (res.ok) return res.json();
+            }).then(data => {
+                if (data.username) {
+                    console.log(data.username)
+                }
+            }).catch(err => console.error(err));
 
         document.getElementById('medical-scan').src = this.newImage()
-        
+
         timer.startTimer(this);
     }
 
     render() {
-        if(this.state.testOver) {
+        if (this.state.testOver) {
+            fetch('/lti/post-grade', {
+                method: 'POST',
+                body: JSON.stringify({ score: this.state.score }),
+                headers: {
+                    'content-Type': 'application/json'
+                },
+            })
+
             return (
-                <p>You have completed the <b>{this.props.assessment}</b> assessment</p>
+                <p>You have completed the <b>{this.props.assessment}</b> assessment. Your grade has been successfully posted.</p>
             )
         }
 
@@ -226,7 +237,7 @@ class Testing extends Component {
                                 onClick={() => {
                                     this.processSelection("Signal present");
                                 }}>
-                                <img alt="medical-scan" id="medical-scan"/>
+                                <img alt="medical-scan" id="medical-scan" />
                             </button>
                         </div>
                     </div>
@@ -244,7 +255,7 @@ class Testing extends Component {
                                 }}>No
                             </button>
 
-                            <Timer/>
+                            <Timer />
                         </div>
 
                         <div class="bottom-right">

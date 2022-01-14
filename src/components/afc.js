@@ -1,4 +1,6 @@
 import React, { Component } from 'react'
+import { io } from "socket.io-client";
+
 import '../styles/afc.css'
 import { fadeOutAndfadeIn } from '../assets/fadingAnimation'
 import {
@@ -18,8 +20,8 @@ class AlternateChoices extends Component {
             rightImage: null,
             promptImage: null,
             solution: null,
-            // correct: 0,
-            // score: 0,
+            correct: 0,
+            score: 0,
             totalAnswered: 0,
             clickDisabled: false,
             keyDisabled: false,
@@ -27,27 +29,23 @@ class AlternateChoices extends Component {
         }
     }
 
-    // Set up web socket
-    HOST = window.location.origin.replace(/^http/, 'ws')
-    ws = new WebSocket(this.HOST);
+    // HOST = window.location.origin.replace(/^http/, 'ws')
+    // ws = new WebSocket(this.HOST);
 
     // Load next pair of medical scans
     newPair() {
-        console.log(absentImages.length);
-        console.log(presentImages.length);
-
         if (absentImages.length && presentImages.length) {
             let random = (min, max) => {
                 let num = Math.random() * (max - min) + min;
-        
+
                 return Math.round(num);
             };
-    
+
             // Get one image from the target absent images collection
             let absentIndex = random(0, absentImages.length - 1);
             let absentImage = absentImages[absentIndex].default;
             absentImages.splice(absentIndex, 1);
-    
+
             // Get another image from the target present images collection
             let presentIndex = random(0, presentImages.length - 1);
             let presentImage = presentImages[presentIndex].default
@@ -55,9 +53,9 @@ class AlternateChoices extends Component {
 
             var leftImage;
             var rightImage;
-    
+
             // Represents which side contains the correct image
-            var side;  
+            var side;
 
             side = random(0, 1);
 
@@ -92,26 +90,24 @@ class AlternateChoices extends Component {
     }
 
     processSelection(selectedSide) {
-        console.log(this.state.totalAnswered)
-
-        if(this.state.totalAnswered < 10) {
+        if (this.state.totalAnswered < 10) {
             this.setState({
                 clickDisabled: true,
                 keyDisabled: true,
                 totalAnswered: this.state.totalAnswered + 1,
             });
-    
-            // if (selectedSide === this.state.solution) {
-            //     this.setState({
-            //         score: (this.state.correct + 1)/(this.state.totalAnswered + 1),
-            //         correct: this.state.correct + 1
-            //     })
-            // } else {
-            //    this.setState({
-            //         score: this.state.correct/(this.state.totalAnswered + 1),
-            //     })
-            // }
-    
+
+            if (selectedSide === this.state.solution) {
+                this.setState({
+                    score: (this.state.correct + 1) / (this.state.totalAnswered + 1),
+                    correct: this.state.correct + 1
+                })
+            } else {
+                this.setState({
+                    score: this.state.correct / (this.state.totalAnswered + 1),
+                })
+            }
+
             let nextPair = this.newPair();
             let date = new Date().toLocaleString();
 
@@ -143,10 +139,10 @@ class AlternateChoices extends Component {
             if (nextPair.length) {
                 let currentLeft = document.getElementById("scan-left");
                 let currentRight = document.getElementById("scan-right");
-    
+
                 fadeOutAndfadeIn(currentLeft, nextPair[0])
                 fadeOutAndfadeIn(currentRight, nextPair[1])
-    
+
                 setTimeout(() => {
                     this.setState({
                         clickDisabled: false,
@@ -155,21 +151,32 @@ class AlternateChoices extends Component {
                 }, 2000);
             } else {
                 setTimeout(() => {
-                    this.setState({testOver: true})
+                    this.setState({ testOver: true })
                 }, 2500)
             }
         }
     }
 
     componentDidMount() {
+        let username;
+
         fetch('/users/get-username')
-        .then(res => {
-            if(res.ok) return res.json();
-        }).then(data => {
-            if(data.username) {
-                console.log(data.username)
-            }
-        }).catch(err => console.error(err));
+            .then(res => {
+                if (res.ok) return res.json();
+            }).then(data => {
+                if (data.username) {
+                    username = data.username
+                    console.log(username)
+                }
+                // Set up web socket
+                var socket = io()
+        
+                socket.emit('new user', {
+                    assessment: this.props.assessment,
+                    username: username
+                })
+                
+            }).catch(err => console.error(err));
 
         var firstPair = this.newPair()
 
@@ -186,7 +193,7 @@ class AlternateChoices extends Component {
                         let currentLeft = this.state.leftImage;
                         this.processSelection(currentLeft)
                     }
-    
+
                     else if (event.key === "j") {
                         let currentRight = this.state.rightImage;
                         this.processSelection(currentRight)
@@ -197,7 +204,15 @@ class AlternateChoices extends Component {
     }
 
     render() {
-        if(this.state.testOver) {
+        if (this.state.testOver) {
+            fetch('/lti/post-grade', {
+                method: 'POST',
+                body: JSON.stringify({ score: this.state.score }),
+                headers: {
+                    'content-Type': 'application/json'
+                },
+            })
+
             return (
                 <p>You have completed the <b>{this.props.assessment}</b> assessment</p>
             )
@@ -207,41 +222,41 @@ class AlternateChoices extends Component {
             <body>
                 <div class="header" id="afc-prompt">
                     <h1 class="afc-prompt part-1">
-                        One of these images contains a signal. 
-                        Click on the image you believe contains a signal. 
+                        One of these images contains a signal.
+                        Click on the image you believe contains a signal.
                     </h1>
-        
+
                     <h1 class="afc-prompt part-2">
                         You can also press 'F' to select the left image or 'J' to select the right image
                     </h1>
                 </div>
-    
+
                 <div class="split left" id="split-afc">
                     <div class="centered">
-                        <button 
-                            class="image-button" 
+                        <button
+                            class="image-button"
                             id="image-button"
                             disabled={this.state.clickDisabled}
                             onClick={() => {
                                 let currentLeft = this.state.leftImage;
                                 this.processSelection(currentLeft)
                             }}>
-                            <img alt="Left scan" id="scan-left"/>
+                            <img alt="Left scan" id="scan-left" />
                         </button>
                     </div>
                 </div>
-    
+
                 <div class="split right" id="split-afc">
                     <div class="centered">
-                        <button 
-                            class="image-button" 
+                        <button
+                            class="image-button"
                             id="image-button"
                             disabled={this.state.clickDisabled}
-                            onClick={() =>{
+                            onClick={() => {
                                 let currentRight = this.state.rightImage;
                                 this.processSelection(currentRight)
                             }}>
-                            <img alt="Right scan" id="scan-right"/>
+                            <img alt="Right scan" id="scan-right" />
                         </button>
                     </div>
                 </div>

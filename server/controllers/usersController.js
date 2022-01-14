@@ -17,6 +17,7 @@ exports.getUsername = (req, res) => {
             username = retrieved.username;
 
             req.session.username = username;
+            req.session.save()
 
             return res.status(200).json(retrieved);
         }
@@ -28,6 +29,8 @@ exports.getUsername = (req, res) => {
 exports.setUsername = (req, res) => {
      // Get sent data.
     let username = req.body.username;
+
+    req.session.username = username;
 
     // Do a PostgreSQL query
     pool.query("INSERT INTO students(student_id, username) VALUES ($1, $2)", [

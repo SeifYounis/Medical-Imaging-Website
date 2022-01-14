@@ -4,13 +4,11 @@
  * https://community.canvaslms.com/t5/Canvas-Developers-Group/Hire-an-LTI-Consultant-Freelancer/td-p/136029
  * https://community.canvaslms.com/t5/Canvas-Developers-Group/SameSite-Cookies-and-Canvas/ba-p/257967
  * https://github.com/instructure/ims-lti
- * https://github.com/hpi-schul-cloud/node-lti-provider-example
  * 
  */
 
 const lti = require('ims-lti');
 
-// MemoryStore shouldn't be used in production. Timestamps must be valid within a 5 minute grace period.
 const nonceStore = new lti.Stores.MemoryStore();
 
 // If app is configured with correct consumer key, proceed to process launch parameters
@@ -73,11 +71,16 @@ exports.handleLaunch = (req, res, next) => {
         req.session.regenerate(err => {
           if (err) next(err);
 
-          req.session.canvas_lti_launch_params = provider.body;
-          req.session.student_id = provider.body.user_id
-
+          // Check if app was launched by an instructor
+          if (provider.body.roles[0] === 'Instructor') {
+            return res.redirect('/admin')
+          }
+          
           // Check if app was launched as an assignment by a student
           if (provider.outcome_service) {
+            req.session.canvas_lti_launch_params = provider.body;
+            req.session.student_id = provider.body.user_id
+
             if(provider.body.custom_canvas_assignment_title === "Reader Study Login") {
               return res.redirect('/login')
             }
@@ -99,11 +102,6 @@ exports.handleLaunch = (req, res, next) => {
             }
           }
 
-          // Check if app was launched by an instructor
-          if (provider.body.roles[0] === 'Instructor') {
-            return res.redirect('/admin')
-          }
-
           return res.send(`It looks like this LTI wasn't launched as an assignment`);
 
         });
@@ -119,10 +117,12 @@ exports.postGrade = (req, res, next) => {
   const provider = new lti.Provider(process.env.CONSUMER_KEY, process.env.CONSUMER_SECRET, nonceStore, lti.HMAC_SHA1);
   
   provider.valid_request(req, req.session.canvas_lti_launch_params, (_err, _isValid) => {
-      provider.outcome_service.send_replace_result(parseFloat(req.body.score), (_err, _result) => {
-          console.log("Graded")
-          return res.status(200).send("Grade successfully posted")
-      })
+    let score = parseFloat(req.body.score);
+
+    provider.outcome_service.send_replace_result(score, (_err, _result) => {
+        console.log("Graded")
+        return res.status(200).send("Grade successfully posted")
+    })
   });
 
   // console.log(req.cookies.canvas_lti_launch_params);

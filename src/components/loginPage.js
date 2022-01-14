@@ -38,11 +38,7 @@ class LoginPage extends Component {
             headers: {
                 'content-Type': 'application/json'
             },
-        }).then(function (response) {
-            return response
-        }).then(function (body) {
-            console.log(body);
-        });
+        })
     }
 
     usernameExists() {
@@ -76,14 +72,16 @@ class LoginPage extends Component {
         fetch('/users/get-username')
         .then(res => {
             if(res.ok) return res.json();
-        }).then(data => {
+        })
+        .then(data => {
             if(data.username) {
                 this.setState({
                     username: data.username,
                     usernameSet: true
                 })
             }
-        }).catch(err => console.error(err));
+        })
+        .catch(err => console.error(err));
     }
 
     render() {

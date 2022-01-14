@@ -1,14 +1,16 @@
-import React, { Component } from 'react'
-import Slider from 'rc-slider';
-import 'rc-slider/assets/index.css';
-import '../styles/rating.css'
+import { Component } from 'react'
+import { io } from "socket.io-client";
+
 import { fadeOutAndfadeIn } from '../assets/fadingAnimation'
 import {
     presentImages,
     absentImages
 } from '../assets/loadImages'
 import { Timer } from '../assets/timer';
-import RatingSlider from '../assets/ratingSlider';
+
+import '../styles/rating.css'
+import Slider from 'rc-slider';
+import 'rc-slider/assets/index.css';
 
 var timer = new Timer();
 
@@ -38,14 +40,17 @@ class Rating extends Component {
         }
     }
 
-    HOST = window.location.origin.replace(/^http/, 'ws')
-    ws = new WebSocket(this.HOST);
+    // Set up web socket
+    socket = io()
+
+    // HOST = window.location.origin.replace(/^http/, 'ws')
+    // ws = new WebSocket(this.HOST);
 
     // Load new image
     newImage() {
         let random = (min, max) => {
             let num = Math.random() * (max - min) + min;
-    
+
             return Math.round(num);
         };
 
@@ -144,7 +149,7 @@ class Rating extends Component {
             // })
             // this.ws.send(wsData)
 
-            if(this.state.totalAnswered + 1 < 20) {
+            if (this.state.totalAnswered + 1 < 20) {
                 fadeOutAndfadeIn(image, this.newImage());
 
                 setTimeout(() => {
@@ -156,7 +161,7 @@ class Rating extends Component {
                 timer.startTimer(this)
             } else {
                 setTimeout(() => {
-                    this.setState({testOver: true})
+                    this.setState({ testOver: true })
                 }, 2500)
             }
         }
@@ -167,18 +172,18 @@ class Rating extends Component {
         this.setState({
             selectedValue: value,
             buttonDisabled: false
-        }) 
+        })
     }
 
     componentDidMount() {
         fetch('/users/get-username')
-        .then(res => {
-            if(res.ok) return res.json();
-        }).then(data => {
-            if(data.username) {
-                console.log(data.username)
-            }
-        }).catch(err => console.error(err));
+            .then(res => {
+                if (res.ok) return res.json();
+            }).then(data => {
+                if (data.username) {
+                    console.log(data.username)
+                }
+            }).catch(err => console.error(err));
 
         document.getElementById('medical-scan').src = this.newImage()
 
@@ -186,7 +191,7 @@ class Rating extends Component {
     }
 
     render() {
-        if(this.state.testOver) {
+        if (this.state.testOver) {
             return (
                 <p>You have completed the <b>{this.props.assessment}</b> assessment</p>
             )
@@ -198,33 +203,110 @@ class Rating extends Component {
                     <h1 class="rating-prompt part-1">
                         Indicate your confidence in the existence of a signal in the following image
                     </h1>
-        
+
                     <h1 class="rating-prompt part-2">
                         Negative values indicate signal likely does not exist, positive values indicate signal likely does exist
                     </h1>
                 </div>
-    
+
                 <div class="split left" id="split-rating">
                     <div class="centered">
-                        <img alt="Medical scan" id="medical-scan"/>
+                        <img alt="Medical scan" id="medical-scan" />
                     </div>
                 </div>
-    
+
                 <div class="split right" id="split-rating">
                     <div class="center-right">
-                        <RatingSlider/>
+                        <Slider
+                            className='slider'
+                            trackStyle={{ backgroundColor: 'yellow', height: 10 }}
+                            style={{
+                                marginTop: "10vh",
+                                marginLeft: "3vw",
+                                marginBottom: "10vh",
+                                // transform: 'translate(-50%, -50%)',
+                                width: "44vw",
+                                fontFamily: "cursive",
+                                height: "10vh",
+                                // border: "solid 5px #000",
+                                // backgroundColor: "white",
+                            }}
+                            handleStyle={{
+                                borderColor: 'white',
+                                height: 20,
+                                width: 20,
+                                // marginLeft: -14,
+                                // marginBottom: 10,
+                                backgroundColor: 'black',
+                            }}
+                            railStyle={{ backgroundColor: 'red', height: 10 }}
+                            min={-10}
+                            max={10}
+                            step={1}
+                            disabled={this.state.sliderDisabled}
+                            value={this.state.selectedValue}
+                            onChange={this.handleOnChange}
+                            marks={{
+                                "-10": {
+                                    style: { fontSize: "1.3em", color: "black" },
+                                    label: <div>10<br /> <br /> <br /><strong style={{ color: "red", marginLeft: '3vw' }}>No signal</strong></div>
+                                },
+                                "-8": {
+                                    style: { fontSize: "1.3em", color: "black" },
+                                    label: -8
+                                },
+                                "-6": {
+                                    style: { fontSize: "1.3em", color: "black" },
+                                    label: -6
+                                },
+                                "-4": {
+                                    style: { fontSize: "1.3em", color: "black" },
+                                    label: -4
+                                },
+                                "-2": {
+                                    style: { fontSize: "1.3em", color: "black" },
+                                    label: -2
+                                },
+                                0: {
+                                    style: { fontSize: "1.3em", color: "black" },
+                                    label: 0
+                                },
+                                2: {
+                                    style: { fontSize: "1.3em", color: "black" },
+                                    label: 2
+                                },
+                                4: {
+                                    style: { fontSize: "1.3em", color: "black" },
+                                    label: 4
+                                },
+                                6: {
+                                    style: { fontSize: "1.3em", color: "black" },
+                                    label: 6
+                                },
 
-                        <button 
+                                8: {
+                                    style: { fontSize: "1.3em", color: "black" },
+                                    label: 8
+                                },
+
+                                10: {
+                                    style: { fontSize: "1.3em", color: "black" },
+                                    label: <div>10<br /> <br /> <br /><strong style={{ color: "blue" }}>Signal exists</strong></div>
+                                }
+                            }}
+                        />
+
+                        <button
                             id='submit-rating'
-                            style={{marginLeft: "20vw"}}
+                            style={{ marginLeft: "20vw" }}
                             disabled={this.state.buttonDisabled}
                             onClick={() => {
                                 this.processSelection(this.state.selectedValue);
                             }}>Confirm rating: {this.state.selectedValue}</button>
-                        
+
                     </div>
 
-                    <Timer/>
+                    <Timer />
                 </div>
             </body>
         )

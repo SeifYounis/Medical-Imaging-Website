@@ -107,7 +107,7 @@ export class Timer extends Component {
                     page.processSelection(page.state.selectedValue)
                 }
                 else {
-                    page.processSelection("Did not answer")
+                    page.processSelection("No answer")
                 }
             }
         }, 1000 * 1);
