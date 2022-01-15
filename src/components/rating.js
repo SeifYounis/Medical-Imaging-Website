@@ -6,7 +6,7 @@ import {
     presentImages,
     absentImages
 } from '../assets/loadImages'
-import { Timer } from '../assets/timer';
+import { Timer } from './timer';
 
 import '../styles/rating.css'
 import Slider from 'rc-slider';

@@ -8,6 +8,17 @@ import { io } from "socket.io-client";
 class Admin extends Component {
     socket = io();
 
+    serveHTML(e) {
+        fetch('/serve-html')
+            .then(res => {
+                if (res.ok) return res.text();
+            })
+            .then(data => {
+                console.log(data)
+            })
+            .catch(err => console.error(err));
+    }
+
     unlockTesting(e) {
         e.preventDefault();
 
@@ -20,13 +31,13 @@ class Admin extends Component {
         let users = document.getElementById("users-list")
 
         fetch('/admin/get-active-connections')
-        .then(res => {
-            if(res.ok) return res.json();
-        })
-        .then(data => {
-            console.log(data)
-        })
-        .catch(err => console.error(err));
+            .then(res => {
+                if (res.ok) return res.json();
+            })
+            .then(data => {
+                console.log(data)
+            })
+            .catch(err => console.error(err));
 
         this.socket.emit('connect-admin');
 
@@ -41,7 +52,7 @@ class Admin extends Component {
             console.log('We got a new student')
             console.log(student)
         })
-        
+
         this.socket.on('remove user', (student) => {
             console.log("We're deleting a user")
             console.log(student)
@@ -60,6 +71,10 @@ class Admin extends Component {
                 {/* <button onClick={this.unlockTesting.bind(this)}>
                     Unlock Testing
                 </button> */}
+
+                <button onClick={this.serveHTML.bind(this)}>
+                    Click here to render HTML
+                </button>
             </body>
         )
     }

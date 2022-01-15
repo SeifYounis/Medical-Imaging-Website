@@ -17,7 +17,6 @@ exports.getUsername = (req, res) => {
             username = retrieved.username;
 
             req.session.username = username;
-            req.session.save()
 
             return res.status(200).json(retrieved);
         }

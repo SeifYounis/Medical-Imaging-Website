@@ -1,6 +1,13 @@
+html, body
+{
+    margin: 0;
+    padding: 0;
+}
+
+
 .header {
-    background:palegoldenrod;
-    height: 12vh
+    background:hsl(55, 67%, 80%);
+    height: 12vh;
 }
 
 .rating-prompt {
@@ -8,6 +15,7 @@
     text-align: center;
     margin-top: 0;
     position: relative;
+    font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif; 
 }
 
 #split-rating {
@@ -19,7 +27,7 @@
 #submit-rating {
     min-height: 3vh;
     min-width: 3vw;
-    background-color:rgb(238, 138, 168);
+    background-color:floralwhite;
     font-size: 3vh;
     font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif; 
 }

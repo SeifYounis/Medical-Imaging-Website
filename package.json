@@ -33,8 +33,7 @@
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "launch": "concurrently \"npm run client\" \"npm run serve\"",
-    "heroku-postbuild": "npm install && npm run build"
+    "launch": "npm run build && npm run serve"
   },
   "eslintConfig": {
     "extends": [
@@ -57,7 +56,6 @@
   "devDependencies": {
     "@testing-library/jest-dom": "^5.16.1",
     "@testing-library/react": "^11.2.7",
-    "concurrently": "^7.0.0",
     "nodemon": "^2.0.15",
     "react-scripts": "^4.0.3",
     "web-vitals": "^1.1.2",

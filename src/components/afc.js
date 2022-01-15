@@ -12,6 +12,9 @@ import {
 // Image selected will go into answer
 
 class AlternateChoices extends Component {
+    // Set up web socket
+    socket = io()
+
     constructor() {
         super();
 
@@ -168,14 +171,6 @@ class AlternateChoices extends Component {
                     username = data.username
                     console.log(username)
                 }
-                // Set up web socket
-                var socket = io()
-        
-                socket.emit('new user', {
-                    assessment: this.props.assessment,
-                    username: username
-                })
-                
             }).catch(err => console.error(err));
 
         var firstPair = this.newPair()
@@ -217,6 +212,13 @@ class AlternateChoices extends Component {
                 <p>You have completed the <b>{this.props.assessment}</b> assessment</p>
             )
         }
+    
+        // console.log(`Username at this point is ${username}`)
+
+        this.socket.emit('new user', {
+            assessment: this.props.assessment,
+            // username: username
+        })
 
         return (
             <body>

@@ -1,5 +1,7 @@
+// See if I need to use this or not: "heroku-postbuild": "npm install && npm run build"
+
 const app = require('./main')
-const port = process.env.PORT || 4000;
+const port = process.env.PORT || 3000;
 
 // const { Server } = require('ws');
 
@@ -25,11 +27,34 @@ io.on('connection', (socket) => {
   console.log(session)
 
   socket.on('new user', (data) => {
-    io.to("admin").emit("new user", {
-      student_id: session.student_id,
-      username: data.username,
-      assessment: data.assessment
-    });
+    // Create new entry in 'active_connections' table in database
+    pool.query(`
+    INSERT INTO active_connections (session_id, student_id, username, active, date_joined)
+    VALUES ($1, $2, $3, $4, $5)
+    ON CONFLICT (session_id) DO NOTHING`, [
+      session.id,
+      session.student_id,
+      session.username,
+      true,
+      data.joined
+    ], (err, result) => {
+      if (err) throw err;
+
+      // pool.query("UPDATE active_connections SET last_answered=$1, current_test=$2 WHERE session_id=$3", [
+      //   req.body.answerDate,
+      //   req.body.assessment,
+      //   req.sessionID
+      // ], (err, result) => {
+      //   if (err) throw err;
+      // })
+
+      io.to("admin").emit("new user", {
+        student_id: session.student_id,
+        // username: data.username,
+        username: session.username,
+        assessment: data.assessment
+      });
+    })
   })
 
   // session.number = 47;
@@ -38,16 +63,17 @@ io.on('connection', (socket) => {
   socket.on('disconnect', () => {
     console.log("Disconnected")
 
-    pool.query("UPDATE active_connections SET active=$1 WHERE session_id=$2", [
-      false,
-      session.id
-    ], (err, result) => {
-      if (err) throw err;
+    // pool.query("UPDATE active_connections SET active=$1, date_disconnected=$2 WHERE session_id=$3", [
+    //   false,
+    //   new Date().toLocaleString(),
+    //   session.id
+    // ], (err, result) => {
+    //   if (err) throw err;
 
-      io.to("admin").emit('remove user', {
-        id: session.student_id
-      })
-    })
+    //   io.to("admin").emit('remove user', {
+    //     id: session.student_id
+    //   })
+    // })
   })
 });
 
@@ -75,7 +101,7 @@ io.on('connection', (socket) => {
 //   });
 // });
 
-// wss.on('connection', (ws, req) => { 
+// wss.on('connection', (ws, req) => {
 //   console.log('Connected')
 
 //   ws.on('close', () => {

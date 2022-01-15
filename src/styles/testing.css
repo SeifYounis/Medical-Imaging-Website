@@ -39,6 +39,7 @@
     margin-top: 0%;
     text-align: center;
     font-size: 3.5vh;
+    font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
 }
 
 .no-button {
@@ -67,6 +68,7 @@
   margin: 21vh 0vw 10vh 0vw;
   width: 49vw;
   height: 10vh;
+  font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
 }
 
 /* Definitely repetitive, but unable to fix it currently */

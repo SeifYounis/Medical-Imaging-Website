@@ -46,28 +46,7 @@ app.post('/add-selection', (req, res) => {
     ], (err, result) => {
         if (err) throw err;
 
-        // Create new entry in 'active_connections' table in database
-        pool.query(`
-            INSERT INTO active_connections (session_id, student_id, username, active)
-            VALUES ($1, $2, $3, $4)
-            ON CONFLICT (session_id) DO NOTHING`, [
-            req.sessionID,
-            req.session.student_id,
-            req.session.username,
-            true
-        ], (err, result) => {
-            if (err) throw err;
-
-            pool.query("UPDATE active_connections SET last_answered=$1, current_test=$2 WHERE session_id=$3", [
-                req.body.answerDate,
-                req.body.assessment,
-                req.sessionID
-            ], (err, result) => {
-                if (err) throw err;
-
-                res.send('Selection successfully added')
-            })
-        })
+        res.send('Selection successfully added')
     })
 })
 
@@ -87,18 +66,27 @@ app.get('/unlocked-testing', function (req, res) {
     })
 })
 
-app.get('/test-python', (req, res) => {
+app.get('/serve-html', (req, res) => {
     let dataToSend;
     // spawn new child process to call the python script
-    const python = spawn('python', ['./scripts/test.py']);
+    const py = spawn('python', ['./scripts/serve_html.py']);
+
+    py.stdin.write(JSON.stringify({username: "seif"}));
+
+    py.stdin.end();
+
     // collect data from script
-    python.stdout.on('data', function (data) {
+    py.stdout.on('data', function (data) {
         console.log('Pipe data from python script ...');
         dataToSend = data.toString();
     });
+
     // in close event we are sure that stream from child process is closed
-    python.on('close', (code) => {
+    py.on('close', (code) => {
         console.log(`child process close all stdio with code ${code}`);
+        
+        console.log(dataToSend)
+
         // send data to browser
         res.send(dataToSend)
     });

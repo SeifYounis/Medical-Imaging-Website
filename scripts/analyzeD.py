@@ -162,7 +162,8 @@ def mkdict(name, zar):  # Create a dictionary with references to our array
 if True:
 	# get script arguments
 	(databasename, configname, session, partno, rocscript) = sys.argv[1:6]
-	execfile(rocscript)  # Read my ROC.py file.
+	# execfile(rocscript)  # Read my ROC.py file.
+	exec(open(rocscript).read()) # Read my ROC.py file.
 
 	# Set up some directories for the output.
 	dirname = os.path.dirname(databasename)
