@@ -3,7 +3,7 @@
  */
 
 import { Component } from "react";
-import '../styles/timer.css'
+import './timer.css'
 
 const FULL_DASH_ARRAY = 283;
 const TIME_LIMIT = 10;

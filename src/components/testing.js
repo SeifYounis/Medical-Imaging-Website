@@ -8,7 +8,7 @@ import {
     absentImages,
     presentAnswerImages
 } from '../assets/loadImages'
-import { Timer } from './timer'
+import { Timer } from './Timer/timer';
 
 var timer = new Timer();
 

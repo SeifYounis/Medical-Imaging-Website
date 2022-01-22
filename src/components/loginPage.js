@@ -11,53 +11,69 @@ class LoginPage extends Component {
         }
     }
 
-    submitForm(e) {
+    async submitForm(e) {
         e.preventDefault();
 
-        // Add new entry to 'students' database
-        fetch('/users/set-username', {
+        const setUsername = await fetch('/users/set-username', {
             method: 'POST',
-            body: JSON.stringify({username: this.state.username}),
+            body: JSON.stringify({ username: this.state.username }),
             headers: {
                 'content-Type': 'application/json'
-            },
-        }).then(function (response) {
-            return response
-        }).then(function (body) {
-            console.log(body);
-        });
+            }
+        })
+
+        const postGrade = await fetch('/lti/post-grade', {
+            method: 'POST',
+            body: JSON.stringify({ score: this.state.score }),
+            headers: {
+                'content-Type': 'application/json'
+            }
+        })
 
         this.setState({
             usernameSet: true
         })
 
+        // Add new entry to 'students' database
+        // fetch('/users/set-username', {
+        //     method: 'POST',
+        //     body: JSON.stringify({username: this.state.username}),
+        //     headers: {
+        //         'content-Type': 'application/json'
+        //     },
+        // }).then(function (response) {
+        //     return response
+        // }).then(function (body) {
+        //     console.log(body);
+        // });
+
         // Post grade to student's gradebook to indicate that they have successfully logged in
-        fetch('/lti/post-grade', {
-            method: 'POST',
-            body: JSON.stringify({score: this.state.score}),
-            headers: {
-                'content-Type': 'application/json'
-            },
-        })
+        // fetch('/lti/post-grade', {
+        //     method: 'POST',
+        //     body: JSON.stringify({ score: this.state.score }),
+        //     headers: {
+        //         'content-Type': 'application/json'
+        //     },
+        // })
     }
 
     usernameExists() {
-        if(this.state.usernameSet) {
-            return(
+        if (this.state.usernameSet) {
+            return (
                 <body>
-                    <p>Welcome, {this.state.username}. You may now proceed to the next assessment</p>
+                    <p>Welcome, <strong>{this.state.username}</strong>. You may now proceed to the next assessment</p>
                 </body>
             )
         }
 
-        return(
+        return (
             <div>
                 <h1>Welcome to the reader study</h1>
                 <h2>Before beginning the assessments, please enter a username using the form below</h2>
                 <form onSubmit={this.submitForm.bind(this)}>
                     <input
                         id="user-login"
-                        type="text" 
+                        type="text"
                         placeholder="Username"
                         onChange={e => this.setState({ username: e.target.value })}>
                     </input>
@@ -70,18 +86,18 @@ class LoginPage extends Component {
 
     componentDidMount() {
         fetch('/users/get-username')
-        .then(res => {
-            if(res.ok) return res.json();
-        })
-        .then(data => {
-            if(data.username) {
-                this.setState({
-                    username: data.username,
-                    usernameSet: true
-                })
-            }
-        })
-        .catch(err => console.error(err));
+            .then(res => {
+                if (res.ok) return res.json();
+            })
+            .then(data => {
+                if (data.username) {
+                    this.setState({
+                        username: data.username,
+                        usernameSet: true
+                    })
+                }
+            })
+            .catch(err => console.error(err));
     }
 
     render() {

@@ -1,7 +1,7 @@
 // See if I need to use this or not: "heroku-postbuild": "npm install && npm run build"
 
 const app = require('./main')
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 4000;
 
 // const { Server } = require('ws');
 
@@ -22,6 +22,8 @@ io.on('connection', (socket) => {
     socket.join('admin')
   })
 
+  // console.log(io.sockets.adapter.rooms.get('user').size)
+
   console.log(`Connected. Here is the session`)
   let session = socket.request.session
   console.log(session)
@@ -29,30 +31,24 @@ io.on('connection', (socket) => {
   socket.on('new user', (data) => {
     // Create new entry in 'active_connections' table in database
     pool.query(`
-    INSERT INTO active_connections (session_id, student_id, username, active, date_joined)
-    VALUES ($1, $2, $3, $4, $5)
+    INSERT INTO active_connections (session_id, student_id, username, current_test, active, date_joined)
+    VALUES ($1, $2, $3, $4, $5, $6)
     ON CONFLICT (session_id) DO NOTHING`, [
       session.id,
       session.student_id,
       session.username,
+      data.assessment,
       true,
       data.joined
     ], (err, result) => {
       if (err) throw err;
 
-      // pool.query("UPDATE active_connections SET last_answered=$1, current_test=$2 WHERE session_id=$3", [
-      //   req.body.answerDate,
-      //   req.body.assessment,
-      //   req.sessionID
-      // ], (err, result) => {
-      //   if (err) throw err;
-      // })
-
       io.to("admin").emit("new user", {
         student_id: session.student_id,
         // username: data.username,
         username: session.username,
-        assessment: data.assessment
+        assessment: data.assessment,
+        date_joined: data.joined
       });
     })
   })
@@ -63,17 +59,17 @@ io.on('connection', (socket) => {
   socket.on('disconnect', () => {
     console.log("Disconnected")
 
-    // pool.query("UPDATE active_connections SET active=$1, date_disconnected=$2 WHERE session_id=$3", [
-    //   false,
-    //   new Date().toLocaleString(),
-    //   session.id
-    // ], (err, result) => {
-    //   if (err) throw err;
+    pool.query("UPDATE active_connections SET active=$1, date_disconnected=$2 WHERE session_id=$3", [
+      false,
+      new Date().toLocaleString(),
+      session.id
+    ], (err, result) => {
+      if (err) throw err;
 
-    //   io.to("admin").emit('remove user', {
-    //     id: session.student_id
-    //   })
-    // })
+      io.to("admin").emit('remove user', {
+        id: session.student_id
+      })
+    })
   })
 });
 
@@ -115,3 +111,9 @@ io.on('connection', (socket) => {
 //     })
 //   });
 // });
+
+// setInterval(() => {
+//   wss.clients.forEach((client) => {
+//     client.send(new Date().toTimeString());
+//   });
+// }, 1000);

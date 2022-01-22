@@ -272,11 +272,11 @@ def unbiasedAUCvar1(x1, x0):  # unbiased estimate of AUC variance.
 	auc=numpy.sum(sm)/n0n1
 	delc=numpy.empty_like(vm)   #This matrix will be delta weights
 	delc[:,:]= 1- cst0
-	for i in xrange(n1):
+	for i in range(n1):
 		j=i*n0
 		delc[ j:(j+n0),j:(j+n0)]=1
 	ind=numpy.arange(0, n0n1, n0)
-	for i in xrange(n0n1):
+	for i in range(n0n1):
 		delc[i,ind]=1
 		ind=(ind+1)%(n0n1)
 	return((auc,numpy.sum(delc*vm)/n0n1/n0n1)) # unbiased est of variance

@@ -68,8 +68,8 @@ exports.handleLaunch = (req, res, next) => {
         //   sameSite: 'none', // This property is absolutely necessary to ensure launch URL can save these params in a cookie
         // });
 
-        req.session.regenerate(err => {
-          if (err) next(err);
+        // req.session.regenerate(err => {
+          // if (err) next(err);
 
           // Check if app was launched by an instructor
           if (provider.body.roles[0] === 'Instructor') {
@@ -104,7 +104,7 @@ exports.handleLaunch = (req, res, next) => {
 
           return res.send(`It looks like this LTI wasn't launched as an assignment`);
 
-        });
+        // });
         
       } else {
         return next(err);

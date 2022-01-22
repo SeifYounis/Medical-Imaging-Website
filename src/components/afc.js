@@ -12,9 +12,6 @@ import {
 // Image selected will go into answer
 
 class AlternateChoices extends Component {
-    // Set up web socket
-    socket = io()
-
     constructor() {
         super();
 
@@ -161,17 +158,30 @@ class AlternateChoices extends Component {
     }
 
     componentDidMount() {
-        let username;
+        // Set up web socket
+        let socket = io()
 
-        fetch('/users/get-username')
-            .then(res => {
-                if (res.ok) return res.json();
-            }).then(data => {
-                if (data.username) {
-                    username = data.username
-                    console.log(username)
-                }
-            }).catch(err => console.error(err));
+        // Send client data to admin
+        socket.emit('new user', {
+            assessment: this.props.assessment,
+            joined: new Date().toLocaleString(),
+        })
+
+        // fetch('/users/get-username')
+        // .then(res => {
+        //     if (res.ok) return res.json();
+        // }).then(data => {
+        //     if (data.username) {
+        //         let socket = io()
+
+        //         socket.emit('new user', {
+        //             assessment: this.props.assessment,
+        //             joined: new Date().toLocaleString(),
+        //             username: data.username
+        //             // username: this.state.username
+        //         })
+        //     }
+        // }).catch(err => console.error(err));
 
         var firstPair = this.newPair()
 
@@ -212,13 +222,8 @@ class AlternateChoices extends Component {
                 <p>You have completed the <b>{this.props.assessment}</b> assessment</p>
             )
         }
-    
-        // console.log(`Username at this point is ${username}`)
 
-        this.socket.emit('new user', {
-            assessment: this.props.assessment,
-            // username: username
-        })
+        // console.log(`Username at this point is ${username}`)
 
         return (
             <body>

@@ -1,6 +1,10 @@
 const pool = require('../../util/db');
 
 exports.getUsername = (req, res) => {
+    if(req.session.username) {
+        return res.status(200).json({username: req.session.username});
+    }
+
     // Do a PostgreSQL query
     pool.query("SELECT username FROM students WHERE student_id=$1", [
         req.session.student_id
@@ -26,8 +30,7 @@ exports.getUsername = (req, res) => {
 }
 
 exports.setUsername = (req, res) => {
-     // Get sent data.
-    let username = req.body.username;
+    let username = req.body.username
 
     req.session.username = username;
 
