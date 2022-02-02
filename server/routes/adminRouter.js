@@ -5,8 +5,6 @@ const pool = require('../../util/db')
 
 router.get('/get-active-connections', (req, res) => {
     pool.query(`SELECT * FROM active_connections WHERE date_disconnected IS NULL`, (err, result) => {
-        console.log(result.rows)
-
         res.status(200).json(result.rows)
     })
 })

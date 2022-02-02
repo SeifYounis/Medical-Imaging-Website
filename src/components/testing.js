@@ -1,5 +1,4 @@
 import { Component } from 'react'
-import { io } from "socket.io-client";
 
 import '../styles/testing.css'
 import { fadeOutAndfadeIn } from '../assets/fadingAnimation'
@@ -10,7 +9,7 @@ import {
 } from '../assets/loadImages'
 import { Timer } from './Timer/timer';
 
-var timer = new Timer();
+let timer = new Timer();
 
 // Every selection contains the following information
 
@@ -37,7 +36,7 @@ class Testing extends Component {
     }
 
     // Set up web socket
-    socket = io()
+    // socket = io()
 
     // HOST = window.location.origin.replace(/^http/, 'ws')
     // ws = new WebSocket(this.HOST);
@@ -50,8 +49,8 @@ class Testing extends Component {
             return Math.round(num);
         };
 
-        var condition;
-        var image;
+        let condition;
+        let image;
 
         if (!absentImages.length && !presentImages.length) {
             clearInterval(timer.timerInterval);
@@ -134,7 +133,7 @@ class Testing extends Component {
             // })
             // this.ws.send(wsData)
 
-            var resultContainer;
+            let resultContainer;
 
             let image = document.getElementById("medical-scan");
             image.style.visibility = 'visible';
@@ -174,6 +173,11 @@ class Testing extends Component {
                 }, 2000)
             }
 
+            /**
+             * Check if user has answered all prompts
+             * False: switch to next prompt image
+             * True: end the test
+             */
             if (this.state.totalAnswered + 1 < 20) {
                 setTimeout(() => {
                     fadeOutAndfadeIn(image, this.newImage());
@@ -197,14 +201,14 @@ class Testing extends Component {
     }
 
     componentDidMount() {
-        fetch('/users/get-username')
-            .then(res => {
-                if (res.ok) return res.json();
-            }).then(data => {
-                if (data.username) {
-                    console.log(data.username)
-                }
-            }).catch(err => console.error(err));
+        // fetch('/users/get-username')
+        //     .then(res => {
+        //         if (res.ok) return res.json();
+        //     }).then(data => {
+        //         if (data.username) {
+        //             console.log(data.username)
+        //         }
+        //     }).catch(err => console.error(err));
 
         document.getElementById('medical-scan').src = this.newImage()
 
@@ -255,7 +259,7 @@ class Testing extends Component {
                                 }}>No
                             </button>
 
-                            <Timer />
+                            <Timer timerInfo={this.props.timerInfo}/>
                         </div>
 
                         <div class="bottom-right">

@@ -6,9 +6,14 @@ import { Component } from "react";
 import './timer.css'
 
 const FULL_DASH_ARRAY = 283;
-const TIME_LIMIT = 10;
-const WARNING_THRESHOLD = 7;
+
+let TIME_LIMIT;
+let WARNING_THRESHOLD;
 const ALERT_THRESHOLD = 3;
+
+// const TIME_LIMIT = 10;
+// const WARNING_THRESHOLD = 7;
+// const ALERT_THRESHOLD = 3;
 
 export class Timer extends Component {
     constructor() {
@@ -16,8 +21,11 @@ export class Timer extends Component {
 
         // Initially, no time has passed, but this will count up
         // and subtract from the TIME_LIMIT
-        this.timeLeft = TIME_LIMIT;
+        this.timeLeft = 0;
         this.timerInterval = null;
+
+        // this.timeLeft = TIME_LIMIT;
+        // this.timerInterval = null;
     }
 
 
@@ -98,7 +106,7 @@ export class Timer extends Component {
 
             let currentImage = document.getElementById("medical-scan")
 
-            if (this.timeLeft <= 5) {
+            if (this.timeLeft <= WARNING_THRESHOLD) {
                 currentImage.style.visibility = "hidden"
             }
 
@@ -111,6 +119,15 @@ export class Timer extends Component {
                 }
             }
         }, 1000 * 1);
+    }
+
+    componentDidMount() {
+        // console.log(this.props.timerInfo)
+
+        TIME_LIMIT = this.props.timerInfo.timeLimit
+        WARNING_THRESHOLD = TIME_LIMIT - this.props.timerInfo.secondsVisible
+
+        this.timeLeft = TIME_LIMIT;
     }
 
     render() {
@@ -135,7 +152,7 @@ export class Timer extends Component {
                         </g>
                     </svg>
                     <span id="base-timer-label" className="base-timer__label">
-                        {10}
+                        {this.props.timerInfo.timeLimit}
                     </span>
                 </div>
             </div>

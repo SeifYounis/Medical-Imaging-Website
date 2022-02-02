@@ -1,18 +1,18 @@
 import { Component } from 'react'
 import { io } from "socket.io-client";
 
-import { fadeOutAndfadeIn } from '../assets/fadingAnimation'
+import { fadeOutAndfadeIn } from '../../assets/fadingAnimation'
 import {
     presentImages,
     absentImages
-} from '../assets/loadImages'
-import { Timer } from './Timer/timer';
+} from '../../assets/loadImages'
+import { Timer } from '../Timer/timer';
 
-import '../styles/rating.css'
+import '../../styles/rating.css'
 import Slider from 'rc-slider';
 import 'rc-slider/assets/index.css';
 
-var timer = new Timer();
+let timer = new Timer();
 
 // Left rating at 0 and it timed out: no activity
 // Rating at 0 and confirmed/everything else: intentional answer
@@ -192,6 +192,14 @@ class Rating extends Component {
 
     render() {
         if (this.state.testOver) {
+            fetch('/lti/post-grade', {
+                method: 'POST',
+                body: JSON.stringify({ score: 1 }),
+                headers: {
+                    'content-Type': 'application/json'
+                },
+            })
+
             return (
                 <p>You have completed the <b>{this.props.assessment}</b> assessment</p>
             )
@@ -306,7 +314,7 @@ class Rating extends Component {
 
                     </div>
 
-                    <Timer />
+                    <Timer timerInfo={this.props.timerInfo}/>
                 </div>
             </body>
         )

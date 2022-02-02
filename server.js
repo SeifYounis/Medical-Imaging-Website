@@ -3,8 +3,6 @@
 const app = require('./main')
 const port = process.env.PORT || 4000;
 
-// const { Server } = require('ws');
-
 const pool = require('./util/db')
 const sess = require('./util/session')
 
@@ -29,45 +27,65 @@ io.on('connection', (socket) => {
   console.log(session)
 
   socket.on('new user', (data) => {
+    socket.join(data.assessment)
+
     // Create new entry in 'active_connections' table in database
     pool.query(`
-    INSERT INTO active_connections (session_id, student_id, username, current_test, active, date_joined)
-    VALUES ($1, $2, $3, $4, $5, $6)
+    INSERT INTO active_connections (session_id, student_id, username, current_test, date_joined)
+    VALUES ($1, $2, $3, $4, $5)
     ON CONFLICT (session_id) DO NOTHING`, [
       session.id,
       session.student_id,
       session.username,
       data.assessment,
-      true,
       data.joined
     ], (err, result) => {
       if (err) throw err;
 
       io.to("admin").emit("new user", {
         student_id: session.student_id,
-        // username: data.username,
-        username: session.username,
-        assessment: data.assessment,
+        username: data.username,
+        // username: session.username,
+        current_test: data.assessment,
         date_joined: data.joined
       });
     })
   })
 
+  socket.on('unlock training', (timerInfo) => {
+    io.to('training').emit('unlock training', timerInfo)
+  })
+
+  socket.on('unlock testing', (timerInfo) => {
+    console.log(timerInfo)
+
+    io.to('testing').emit('unlock testing', timerInfo)
+  })
+
+  socket.on('unlock rating', (timerInfo) => {
+    io.to('rating').emit('unlock rating', timerInfo)
+  })
+
+  socket.on('unlock 2AFC', () => {
+    io.to('2AFC').emit('unlock 2AFC')
+  })
+
   // session.number = 47;
   // session.save()
 
-  socket.on('disconnect', () => {
-    console.log("Disconnected")
+  socket.on('disconnecting', () => {
+    let [, room] = socket.rooms;
+    console.log(`Disconnected. Socket has left ${room}`)
 
-    pool.query("UPDATE active_connections SET active=$1, date_disconnected=$2 WHERE session_id=$3", [
-      false,
+    pool.query("UPDATE active_connections SET date_disconnected=$1 WHERE session_id=$2", [
       new Date().toLocaleString(),
       session.id
     ], (err, result) => {
       if (err) throw err;
 
       io.to("admin").emit('remove user', {
-        id: session.student_id
+        id: session.student_id,
+        current_test: room
       })
     })
   })
@@ -77,6 +95,7 @@ io.on('connection', (socket) => {
  * Primary reference for capturing session data through web sockets
  * https://github.com/websockets/ws/blob/master/examples/express-session-parse/index.js
  */
+// const { Server } = require('ws');
 // const wss = new Server({ noServer: true })
 
 // server.on('upgrade', function (request, socket, head) {

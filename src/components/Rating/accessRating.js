@@ -1,9 +1,9 @@
 import { Component } from "react";
-import Testing from "./testing";
+import Rating from './rating'
 
-import { io } from "socket.io-client";
+import { io } from 'socket.io-client'
 
-class AccessTesting extends Component {
+class AccessRating extends Component {
     constructor() {
         super();
 
@@ -18,28 +18,13 @@ class AccessTesting extends Component {
 
     accessAssessmemt() {
         if (this.state.unlocked) {
-            return <Testing timerInfo={this.state.timerInfo} assessment={this.props.assessment}/>
+            return <Rating timerInfo={this.state.timerInfo} assessment={this.props.assessment}/>
         }
 
         return <h2>Please wait for the instructor to unlock this test</h2>
     }
 
     componentDidMount() {
-        // fetch('/unlocked-testing')
-        // .then(res => {
-        //     if(res.ok) {
-        //         return res.json();
-        //     }
-        // }).then(data => {
-        //     if(data) {
-        //         this.setState({
-        //             unlocked: data.unlocked
-        //         })
-
-        //         // console.log(this.state);
-        //     }
-        // }).catch(err => console.error(err));
-
         fetch('/users/get-username')
             .then(res => {
                 if (res.ok) return res.json();
@@ -54,9 +39,7 @@ class AccessTesting extends Component {
                 }
             })
 
-        this.socket.on('unlock testing', (timerInfo) => {
-            console.log(timerInfo)
-
+        this.socket.on('unlock rating', (timerInfo) => {
             this.setState({
                 unlocked: true,
                 timerInfo: timerInfo
@@ -69,4 +52,4 @@ class AccessTesting extends Component {
     }
 }
 
-export default AccessTesting;
+export default AccessRating

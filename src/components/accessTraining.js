@@ -1,9 +1,9 @@
 import { Component } from "react";
 import Testing from "./testing";
 
-import { io } from "socket.io-client";
+import { io } from 'socket.io-client'
 
-class AccessTesting extends Component {
+class AccessTraining extends Component {
     constructor() {
         super();
 
@@ -25,21 +25,6 @@ class AccessTesting extends Component {
     }
 
     componentDidMount() {
-        // fetch('/unlocked-testing')
-        // .then(res => {
-        //     if(res.ok) {
-        //         return res.json();
-        //     }
-        // }).then(data => {
-        //     if(data) {
-        //         this.setState({
-        //             unlocked: data.unlocked
-        //         })
-
-        //         // console.log(this.state);
-        //     }
-        // }).catch(err => console.error(err));
-
         fetch('/users/get-username')
             .then(res => {
                 if (res.ok) return res.json();
@@ -54,9 +39,7 @@ class AccessTesting extends Component {
                 }
             })
 
-        this.socket.on('unlock testing', (timerInfo) => {
-            console.log(timerInfo)
-
+        this.socket.on('unlock training', (timerInfo) => {
             this.setState({
                 unlocked: true,
                 timerInfo: timerInfo
@@ -69,4 +52,4 @@ class AccessTesting extends Component {
     }
 }
 
-export default AccessTesting;
+export default AccessTraining

@@ -30,10 +30,10 @@ function initializeSession() {
                 tableName: 'session'
             }),
             // cookie: {
-            //     secure: true,
-            //     maxAge: 6 * 60 * 60 * 1000, // Cookie lasts 6 hours, after which time the assignment must be relaunched
-            //     sameSite: 'none',
-            //     domain: 'seif-reader-study.herokuapp.com',
+                // maxAge: 60 * 60 * 1000, // Cookie lasts 1 hour, after which time the user must log in again
+                // secure: false,
+                // sameSite: 'none',
+                // domain: 'seif-reader-study.herokuapp.com',
             // }
         })
     }

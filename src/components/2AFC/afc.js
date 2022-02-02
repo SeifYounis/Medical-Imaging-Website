@@ -1,12 +1,12 @@
 import React, { Component } from 'react'
-import { io } from "socket.io-client";
+// import { io } from "socket.io-client";
 
-import '../styles/afc.css'
-import { fadeOutAndfadeIn } from '../assets/fadingAnimation'
+import './afc.css'
+import { fadeOutAndfadeIn } from '../../assets/fadingAnimation'
 import {
     presentImages,
     absentImages
-} from '../assets/loadImages'
+} from '../../assets/loadImages'
 
 // Signal absent image in prompt_image and signal present image in solution
 // Image selected will go into answer
@@ -159,13 +159,17 @@ class AlternateChoices extends Component {
 
     componentDidMount() {
         // Set up web socket
-        let socket = io()
+        // let socket = io()
 
-        // Send client data to admin
-        socket.emit('new user', {
-            assessment: this.props.assessment,
-            joined: new Date().toLocaleString(),
-        })
+        // // Send client data to admin
+        // socket.emit('new user', {
+        //     assessment: this.props.assessment,
+        //     joined: new Date().toLocaleString(),
+        // })
+
+        // socket.on('unlock 2AFC', () => {
+        //     this.setState({unlocked: true})
+        // })
 
         // fetch('/users/get-username')
         // .then(res => {
@@ -209,6 +213,7 @@ class AlternateChoices extends Component {
     }
 
     render() {
+        // Display message once test is over
         if (this.state.testOver) {
             fetch('/lti/post-grade', {
                 method: 'POST',
@@ -226,7 +231,7 @@ class AlternateChoices extends Component {
         // console.log(`Username at this point is ${username}`)
 
         return (
-            <body>
+            <div>
                 <div class="header" id="afc-prompt">
                     <h1 class="afc-prompt part-1">
                         One of these images contains a signal.
@@ -267,7 +272,7 @@ class AlternateChoices extends Component {
                         </button>
                     </div>
                 </div>
-            </body>
+            </div>
         )
     }
 }

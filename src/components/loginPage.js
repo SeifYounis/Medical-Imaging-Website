@@ -1,5 +1,7 @@
 import { Component } from 'react'
 
+import '../assets/loadingAnimation.css'
+
 class LoginPage extends Component {
     constructor() {
         super();
@@ -14,7 +16,12 @@ class LoginPage extends Component {
     async submitForm(e) {
         e.preventDefault();
 
-        const setUsername = await fetch('/users/set-username', {
+        // Display loading animation
+        let loader = document.getElementById('loader-wrapper')
+        loader.style.visibility = "visible"
+
+        // Add new entry to 'students' database
+        await fetch('/users/set-username', {
             method: 'POST',
             body: JSON.stringify({ username: this.state.username }),
             headers: {
@@ -22,7 +29,8 @@ class LoginPage extends Component {
             }
         })
 
-        const postGrade = await fetch('/lti/post-grade', {
+        // Post grade to student's gradebook to indicate that they have successfully logged in
+        await fetch('/lti/post-grade', {
             method: 'POST',
             body: JSON.stringify({ score: this.state.score }),
             headers: {
@@ -33,28 +41,6 @@ class LoginPage extends Component {
         this.setState({
             usernameSet: true
         })
-
-        // Add new entry to 'students' database
-        // fetch('/users/set-username', {
-        //     method: 'POST',
-        //     body: JSON.stringify({username: this.state.username}),
-        //     headers: {
-        //         'content-Type': 'application/json'
-        //     },
-        // }).then(function (response) {
-        //     return response
-        // }).then(function (body) {
-        //     console.log(body);
-        // });
-
-        // Post grade to student's gradebook to indicate that they have successfully logged in
-        // fetch('/lti/post-grade', {
-        //     method: 'POST',
-        //     body: JSON.stringify({ score: this.state.score }),
-        //     headers: {
-        //         'content-Type': 'application/json'
-        //     },
-        // })
     }
 
     usernameExists() {
@@ -80,6 +66,10 @@ class LoginPage extends Component {
 
                     <button type="submit">Begin</button>
                 </form>
+
+                <div id="loader-wrapper" style={{visibility: "hidden"}}>
+                    <div id="loader"></div>
+                </div>
             </div>
         )
     }
