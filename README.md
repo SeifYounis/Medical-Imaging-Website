@@ -1,25 +1,28 @@
-# Medical Imaging Evaluation Training
- 
-We would like to have two possible ways to run the course
+# Welcome to the Reader Study
 
-1) As part of a self-guided web-based course,
-2) As an interactive lecture where I present material and can control which portions of the quiz/study are available to the audience.
+## Table of Contents
+1. [Reader Study Overview](./docs/overview.md)
+2. [Web Application](./docs/webapp.md)
+    <!-- - [Web Development Frameworks]()
+    - [Hosting the application]() -->
+<!-- 3. [Learning Management System]()
+    - [Learning Tools Interoperability (LTI)]()
+        - [Node.js LTI Library]()
+    - [Canvas Instructure]() -->
 
-It would be good to reuse as much code as possible for these two course scenarios.
 
-In either scenario there would be four sessions with four interfaces presented to the user/student.
+<!-- <table>
+<tr><th>Table 1 Heading 1 </th><th>Table 1 Heading 2</th></tr>
+<tr><td>
 
-## Binary interface without feedback (testing)  
-User clicks on image if he thinks there is a signal in the image, and clicks on a “No” button if he thinks there is no signal.   The interface moves to the next image.  The user has only a set amount of time make this choice before the interface automatically moves to the next image.  Some of the images will contain a signal, some will not.  The fraction of images that contain a signal (prevalence) may vary from user to user.
+|Table 1| Middle | Table 2|
+|--|--|--|
+|a| not b|and c |
 
-## Binary interface with feedback (training)  
-This interface is the same as the previous one, except after each response from the user, the display shows the target in the image (if it was there), and tells the user whether her assessment was correct.
+</td><td>
 
-## Rating interface  
-The image is displayed next to a -10 to +10 scale.  The user clicks on the scale to indicate a his perceived likelihood of signal presence.  The interface then moves to the next image.
+|b|1|2|3| 
+|--|--|--|--|
+|a|s|d|f|
 
-## Two alternative forced-choice (2AFC) interface  
-Two images are displayed to the user.  One contains a signal.  One does not.  She clicks on one of the two images, or presses “f” to indicate the left image and “j” to indicate the right image.
-## 
-
-**In all scenarios, the image should blank momentarily after the user’s response so he knows that the input was received and the image is changing.**
+</td></tr> </table> -->

@@ -4,15 +4,12 @@ import {
   Route,
   BrowserRouter
 } from "react-router-dom";
-// import AlternateChoices from './components/2AFC/afc';
-import AccessAFC from './components/2AFC/accessAFC';
-import AccessRating from './components/Rating/accessRating';
-import AccessTesting from './components/accessTesting';
-import AccessTraining from './components/accessTraining';
 import LoginPage from './components/loginPage';
-import Testing from './components/testing';
+import AccessAssessment from './components/accessAssessment';
+import TestingAndTraining from './components/TestingAndTraining/TestingAndTraining';
 import Admin from './components/admin';
-// import Rating from './components/Rating/rating';
+import Rating from './components/Rating/rating';
+import AlternateChoices from './components/2AFC/afc';
 // import Home from './pages/home';
 
 export function App() {
@@ -22,29 +19,29 @@ export function App() {
         <Route path="/admin">
           <Admin/>
         </Route>
-        {/* <Route path="/testing">
-          <Testing assessment="testing"/>
-        </Route> */}
         <Route path="/testing">
-          <AccessTesting assessment="testing"/>
+          <AccessAssessment assessment="testing"/>
         </Route>
-        {/* <Route path="/training">
-          <Testing assessment="training"/>
-        </Route> */}
+        <Route path="/just-testing">
+          <TestingAndTraining assessment="testing"/>
+        </Route>
         <Route path="/training">
-          <AccessTraining assessment="training"/>
+          <AccessAssessment assessment="training"/>
         </Route>
-        {/* <Route path="/rating">
-          <Rating assessment="rating"/>
-        </Route> */}
+        <Route path="/just-training">
+          <TestingAndTraining assessment="training"/>
+        </Route> 
         <Route path="/rating">
-          <AccessRating assessment="rating"/>
+          <AccessAssessment assessment="rating"/>
         </Route>
-        {/* <Route path="/alternate-choice">
-          <AlternateChoices assessment="2AFC"/>
-        </Route> */}
+        <Route path="/just-rating">
+          <Rating assessment="rating"/>
+        </Route>
         <Route path="/alternate-choice">
-          <AccessAFC assessment="2AFC"/>
+          <AccessAssessment assessment="2AFC"/>
+        </Route>
+        <Route path="/just-alternate-choice">
+          <AlternateChoices assessment="2AFC"/>
         </Route>
         <Route path="/login">
           <LoginPage/>

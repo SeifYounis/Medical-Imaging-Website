@@ -29,6 +29,14 @@ io.on('connection', (socket) => {
   socket.on('new user', (data) => {
     socket.join(data.assessment)
 
+    io.to("admin").emit("new user", {
+      student_id: session.student_id,
+      username: data.username,
+      // username: session.username,
+      current_test: data.assessment,
+      date_joined: data.joined
+    });
+
     // Create new entry in 'active_connections' table in database
     pool.query(`
     INSERT INTO active_connections (session_id, student_id, username, current_test, date_joined)
@@ -41,14 +49,6 @@ io.on('connection', (socket) => {
       data.joined
     ], (err, result) => {
       if (err) throw err;
-
-      io.to("admin").emit("new user", {
-        student_id: session.student_id,
-        username: data.username,
-        // username: session.username,
-        current_test: data.assessment,
-        date_joined: data.joined
-      });
     })
   })
 
@@ -57,8 +57,6 @@ io.on('connection', (socket) => {
   })
 
   socket.on('unlock testing', (timerInfo) => {
-    console.log(timerInfo)
-
     io.to('testing').emit('unlock testing', timerInfo)
   })
 
@@ -70,23 +68,20 @@ io.on('connection', (socket) => {
     io.to('2AFC').emit('unlock 2AFC')
   })
 
-  // session.number = 47;
-  // session.save()
-
   socket.on('disconnecting', () => {
     let [, room] = socket.rooms;
     console.log(`Disconnected. Socket has left ${room}`)
+
+    io.to("admin").emit('remove user', {
+      id: session.student_id,
+      current_test: room
+    })
 
     pool.query("UPDATE active_connections SET date_disconnected=$1 WHERE session_id=$2", [
       new Date().toLocaleString(),
       session.id
     ], (err, result) => {
       if (err) throw err;
-
-      io.to("admin").emit('remove user', {
-        id: session.student_id,
-        current_test: room
-      })
     })
   })
 });

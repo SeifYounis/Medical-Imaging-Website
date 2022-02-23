@@ -1,13 +1,13 @@
 import { Component } from 'react'
 
-import '../styles/testing.css'
-import { fadeOutAndfadeIn } from '../assets/fadingAnimation'
+import './testing.css'
+import { fadeOutAndfadeIn } from '../../assets/fadingAnimation'
 import {
     presentImages,
     absentImages,
     presentAnswerImages
-} from '../assets/loadImages'
-import { Timer } from './Timer/timer';
+} from '../../assets/loadImages'
+import { Timer } from '../Timer/timer';
 
 let timer = new Timer();
 
@@ -19,7 +19,7 @@ let timer = new Timer();
 // Name of the image with unique identifier
 // Type of image
 
-class Testing extends Component {
+class TestingAndTraining extends Component {
     constructor() {
         super();
 
@@ -76,8 +76,6 @@ class Testing extends Component {
             this.setState({
                 solution: "Signal present"
             })
-
-            // console.log("Signal Present Images Length: " + presentImages.length)
 
             let index = random(0, presentImages.length - 1);
             image = presentImages[index].default
@@ -179,37 +177,43 @@ class Testing extends Component {
              * True: end the test
              */
             if (this.state.totalAnswered + 1 < 20) {
-                setTimeout(() => {
-                    fadeOutAndfadeIn(image, this.newImage());
-                }, 2000)
+                /** 
+                 * In the training interface, add a delay before transitioning to the next image so users have time to view feedback. 
+                 * No such delay needed for the testing interface
+                 * */ 
+                if(this.props.assessment === 'training') {
+                    setTimeout(() => {
+                        fadeOutAndfadeIn(image, this.newImage());
+    
+                        this.setState({
+                            isDisabled: false
+                        }, () => {
+                            timer.startTimer(this);
+                        });
+                    }, 2000);
 
-                setTimeout(() => {
+                } else if(this.props.assessment === 'testing') {
+                    console.log(image.style.visibility === 'hidden')
+
+                    fadeOutAndfadeIn(image, this.newImage());
+    
                     this.setState({
                         isDisabled: false
+                    }, () => {
+                        timer.startTimer(this);
                     });
-                }, 3750);
+                }
 
-                setTimeout(() => {
-                    timer.startTimer(this);
-                }, 2000);
+
             } else {
                 setTimeout(() => {
                     this.setState({ testOver: true })
-                }, 2500)
+                }, 1500)
             }
         }
     }
 
     componentDidMount() {
-        // fetch('/users/get-username')
-        //     .then(res => {
-        //         if (res.ok) return res.json();
-        //     }).then(data => {
-        //         if (data.username) {
-        //             console.log(data.username)
-        //         }
-        //     }).catch(err => console.error(err));
-
         document.getElementById('medical-scan').src = this.newImage()
 
         timer.startTimer(this);
@@ -226,7 +230,7 @@ class Testing extends Component {
             })
 
             return (
-                <p>You have completed the <b>{this.props.assessment}</b> assessment. Your grade has been successfully posted.</p>
+                <p>You have completed the <b>{this.props.assessment}</b> assessment. Your grade has been successfully posted. You may now close this window</p>
             )
         }
 
@@ -259,7 +263,7 @@ class Testing extends Component {
                                 }}>No
                             </button>
 
-                            <Timer timerInfo={this.props.timerInfo}/>
+                            <Timer timerInfo={this.props.timerInfo || {timeLimit: 10, secondsVisible: 7}}/>
                         </div>
 
                         <div class="bottom-right">
@@ -284,4 +288,4 @@ class Testing extends Component {
     }
 }
 
-export default Testing;
+export default TestingAndTraining;

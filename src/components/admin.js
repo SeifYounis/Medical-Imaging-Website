@@ -6,8 +6,13 @@ import tableStyles from "./Table/Table.module.css";
 
 // To do:
 // Adjust timer
-// Adjust number of images
+// Adjust number of images and number of each type of image
 // Control when certain assessments are available
+
+// Two groups of students
+// Group 1. 2/3 are signal absent, 1/3 are signal present
+// Group 2. 2/3 are signal present, 1/3 are signal absent
+// Add group number to database
 
 class Admin extends Component {
     constructor() {
@@ -85,7 +90,8 @@ class Admin extends Component {
             timeLimit: this.state.timeLimit,
             secondsVisible: this.state.secondsVisible
         })
-        alert('Testing Unlocked')
+        console.log("Testing Unlocked")
+        // alert('Testing Unlocked')
     }
 
     unlockTraining(e) {
@@ -93,8 +99,8 @@ class Admin extends Component {
             timeLimit: this.state.timeLimit,
             secondsVisible: this.state.secondsVisible
         })
-        
-        alert('Training Unlocked')
+
+        console.log('Training Unlocked')
     }
 
     unlockRating(e) {
@@ -103,12 +109,12 @@ class Admin extends Component {
             secondsVisible: this.state.secondsVisible
         })
 
-        alert('Rating Unlocked')
+        console.log('Rating Unlocked')
     }
 
     unlock2AFC(e) {
         this.socket.emit('unlock 2AFC')
-        alert('2AFC Unlocked')
+        console.log('2AFC Unlocked')
     }
 
     configTests(e) {
@@ -119,13 +125,9 @@ class Admin extends Component {
             secondsVisible: Number(e.target.secondsVisible.value),
             isDisabled: false
         }, () => {
-            // let buttons = document.getElementsByClassName('unlockButton');
+            console.log('Settings saved')
 
-            // for (let button of buttons) {
-            //     button.removeAttribute('disabled')
-            // }
-
-            alert('Settings saved');
+            // alert('Settings saved');
         })
     }
 
@@ -147,29 +149,37 @@ class Admin extends Component {
         this.socket.emit('connect-admin');
 
         this.socket.on('new user', (user) => {
-            this.addRow(user, users)
+            if(user) {
+                this.addRow(user, users)
+            } else {
+                console.log("Socket sent blank data in new user")
+            }
         })
 
         // Remove active connection event. Delete row and update count
         this.socket.on('remove user', (student) => {
-            let countToUpdate;
+            if(student) {
+                let countToUpdate;
 
-            if (student.current_test === "testing") {
-                countToUpdate = "numTestingStudents"
-            } else if (student.current_test === "training") {
-                countToUpdate = "numTrainingStudents"
-            } else if (student.current_test === "rating") {
-                countToUpdate = "numRatingStudents"
-            } else if (student.current_test === "2AFC") {
-                countToUpdate = "num2AFCStudents"
+                if (student.current_test === "testing") {
+                    countToUpdate = "numTestingStudents"
+                } else if (student.current_test === "training") {
+                    countToUpdate = "numTrainingStudents"
+                } else if (student.current_test === "rating") {
+                    countToUpdate = "numRatingStudents"
+                } else if (student.current_test === "2AFC") {
+                    countToUpdate = "num2AFCStudents"
+                }
+
+                this.setState({ [countToUpdate]: this.state[countToUpdate] - 1 }, () => {
+                    // console.log(student)
+
+                    let user = document.getElementById(student.id)
+                    user.remove()
+                })
+            } else {
+                console.log('Socket sent empty data in remove user')
             }
-
-            this.setState({ [countToUpdate]: this.state[countToUpdate] - 1 }, () => {
-                // console.log(student)
-
-                let user = document.getElementById(student.id)
-                user.remove()
-            })
         })
     }
 
@@ -223,21 +233,32 @@ class Admin extends Component {
 
                     <button 
                         className="unlockButton" 
-                        onClick={this.unlockTesting.bind(this)}
-                        disabled={this.state.isDisabled}
-                        >Unlock Testing</button>
-                    <span> Students in testing section: {this.state.numTestingStudents}</span>
-                    <br />
-
-                    <button className="unlockButton" onClick={this.unlockTraining.bind(this)} disabled={this.state.isDisabled}>Unlock Training</button>
+                        onClick={this.unlockTraining.bind(this)} 
+                        disabled={this.state.isDisabled}>
+                        Unlock Training</button>
                     <span> Students in training section: {this.state.numTrainingStudents}</span>
                     <br />
 
-                    <button className="unlockButton" onClick={this.unlockRating.bind(this)} disabled={this.state.isDisabled}>Unlock Rating</button>
+                    <button 
+                        className="unlockButton" 
+                        onClick={this.unlockTesting.bind(this)}
+                        disabled={this.state.isDisabled}>
+                        Unlock Testing</button>
+                    <span> Students in testing section: {this.state.numTestingStudents}</span>
+                    <br />
+
+                    <button 
+                        className="unlockButton" 
+                        onClick={this.unlockRating.bind(this)} 
+                        disabled={this.state.isDisabled}>
+                        Unlock Rating</button>
                     <span> Students in rating section: {this.state.numRatingStudents}</span>
                     <br />
 
-                    <button className="unlockButton" onClick={this.unlock2AFC.bind(this)} disabled={this.state.isDisabled}>Unlock 2AFC</button>
+                    <button 
+                        className="unlockButton" 
+                        onClick={this.unlock2AFC.bind(this)}>
+                        Unlock 2AFC</button>
                     <span> Students in 2AFC section: {this.state.num2AFCStudents}</span>
                     <br />
                 </fieldset>

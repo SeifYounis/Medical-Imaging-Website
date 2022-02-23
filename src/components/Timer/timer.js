@@ -11,10 +11,6 @@ let TIME_LIMIT;
 let WARNING_THRESHOLD;
 const ALERT_THRESHOLD = 3;
 
-// const TIME_LIMIT = 10;
-// const WARNING_THRESHOLD = 7;
-// const ALERT_THRESHOLD = 3;
-
 export class Timer extends Component {
     constructor() {
         super();

@@ -1,5 +1,4 @@
 import { Component } from 'react'
-import { io } from "socket.io-client";
 
 import { fadeOutAndfadeIn } from '../../assets/fadingAnimation'
 import {
@@ -8,7 +7,7 @@ import {
 } from '../../assets/loadImages'
 import { Timer } from '../Timer/timer';
 
-import '../../styles/rating.css'
+import './rating.css'
 import Slider from 'rc-slider';
 import 'rc-slider/assets/index.css';
 
@@ -25,13 +24,14 @@ let timer = new Timer();
 // Name of the image with unique identifier
 // Type of image
 
+// Fade in new image without fading out old image if it disappears
+
 class Rating extends Component {
     constructor() {
         super();
 
         this.state = {
             buttonDisabled: true,
-            sliderDisabled: false,
             selectedValue: null,
             totalAnswered: 0,
             promptImage: null,
@@ -39,9 +39,6 @@ class Rating extends Component {
             testOver: false,
         }
     }
-
-    // Set up web socket
-    socket = io()
 
     // HOST = window.location.origin.replace(/^http/, 'ws')
     // ws = new WebSocket(this.HOST);
@@ -114,7 +111,6 @@ class Rating extends Component {
         if (this.state.totalAnswered < 20) {
             this.setState({
                 buttonDisabled: true,
-                sliderDisabled: true,
                 totalAnswered: this.state.totalAnswered + 1,
                 selectedValue: null
             });
@@ -152,26 +148,25 @@ class Rating extends Component {
             if (this.state.totalAnswered + 1 < 20) {
                 fadeOutAndfadeIn(image, this.newImage());
 
-                setTimeout(() => {
-                    this.setState({
-                        sliderDisabled: false,
-                    });
-                }, 2000);
-
                 timer.startTimer(this)
             } else {
                 setTimeout(() => {
                     this.setState({ testOver: true })
-                }, 2500)
+                }, 1500)
             }
         }
     }
 
 
     handleOnChange = (value) => {
+        let image = document.getElementById('medical-scan')
+
+        // Don't let user click submit button unless the image is fully loaded
+        let disableButton = image.style.opacity === '1' ? false : true
+
         this.setState({
             selectedValue: value,
-            buttonDisabled: false
+            buttonDisabled: disableButton
         })
     }
 
@@ -185,7 +180,9 @@ class Rating extends Component {
                 }
             }).catch(err => console.error(err));
 
-        document.getElementById('medical-scan').src = this.newImage()
+        let image = document.getElementById('medical-scan')
+        image.src = this.newImage()
+        image.style.opacity = 1
 
         timer.startTimer(this);
     }
@@ -207,24 +204,24 @@ class Rating extends Component {
 
         return (
             <body>
-                <div class="header" id="rating-prompt">
-                    <h1 class="rating-prompt part-1">
+                <div className="header" id="rating-prompt">
+                    <h1 className="rating-prompt part-1">
                         Indicate your confidence in the existence of a signal in the following image
                     </h1>
 
-                    <h1 class="rating-prompt part-2">
+                    <h1 className="rating-prompt part-2">
                         Negative values indicate signal likely does not exist, positive values indicate signal likely does exist
                     </h1>
                 </div>
 
-                <div class="split left" id="split-rating">
-                    <div class="centered">
+                <div className="split left" id="split-rating">
+                    <div className="centered">
                         <img alt="Medical scan" id="medical-scan" />
                     </div>
                 </div>
 
-                <div class="split right" id="split-rating">
-                    <div class="center-right">
+                <div className="split right" id="split-rating">
+                    <div className="center-right">
                         <Slider
                             className='slider'
                             trackStyle={{ backgroundColor: 'yellow', height: 10 }}
@@ -251,13 +248,12 @@ class Rating extends Component {
                             min={-10}
                             max={10}
                             step={1}
-                            disabled={this.state.sliderDisabled}
                             value={this.state.selectedValue}
                             onChange={this.handleOnChange}
                             marks={{
                                 "-10": {
                                     style: { fontSize: "1.3em", color: "black" },
-                                    label: <div>10<br /> <br /> <br /><strong style={{ color: "red", marginLeft: '3vw' }}>No signal</strong></div>
+                                    label: <div>10<br /> <br /><strong style={{ color: "red", marginLeft: '3vw' }}>No signal</strong></div>
                                 },
                                 "-8": {
                                     style: { fontSize: "1.3em", color: "black" },
@@ -299,7 +295,7 @@ class Rating extends Component {
 
                                 10: {
                                     style: { fontSize: "1.3em", color: "black" },
-                                    label: <div>10<br /> <br /> <br /><strong style={{ color: "blue" }}>Signal exists</strong></div>
+                                    label: <div>10<br /> <br /><strong style={{ color: "blue" }}>Signal exists</strong></div>
                                 }
                             }}
                         />
@@ -314,7 +310,7 @@ class Rating extends Component {
 
                     </div>
 
-                    <Timer timerInfo={this.props.timerInfo}/>
+                    <Timer timerInfo={this.props.timerInfo || {timeLimit: 10, secondsVisible: 7}}/>
                 </div>
             </body>
         )
