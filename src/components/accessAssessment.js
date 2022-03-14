@@ -15,7 +15,8 @@ class AccessAssessment extends Component {
 
         this.state = {
             unlocked: false,
-            timerInfo: null
+            configInfo: null,
+            group: null
         }
     }
 
@@ -26,12 +27,20 @@ class AccessAssessment extends Component {
                 <h2>Please wait for the instructor to unlock this test</h2>
             )
         } else {
-            if(this.props.assessment === "testing" || this.props.assessment === 'training') {
-                return <TestingAndTraining timerInfo={this.state.timerInfo} assessment={this.props.assessment}/>
-            } else if(this.props.assessment === 'rating') {
-                return <Rating timerInfo={this.state.timerInfo} assessment={this.props.assessment}/>
-            } else if(this.props.assessment === '2AFC') {
-                return <AlternateChoices assessment={this.props.assessment}/>
+            if (this.props.assessment === "testing" || this.props.assessment === 'training') {
+                return <TestingAndTraining
+                    configInfo={this.state.configInfo}
+                    assessment={this.props.assessment}
+                    group={this.state.group} />
+
+            } else if (this.props.assessment === 'rating') {
+                return <Rating
+                    configInfo={this.state.configInfo}
+                    assessment={this.props.assessment} />
+            } else if (this.props.assessment === '2AFC') {
+                return <AlternateChoices
+                    configInfo={this.state.configInfo}
+                    assessment={this.props.assessment} />
             }
         }
     }
@@ -51,36 +60,33 @@ class AccessAssessment extends Component {
                 }
             })
 
-        // this.socket.on(`unlock ${this.props.assessment}`, (timerInfo) => {
-        //     this.setState({
-        //         unlocked: true,
-        //         timerInfo: timerInfo
-        //     })
-        // })
-
-        this.socket.on('unlock training', (timerInfo) => {
+        this.socket.on('unlock training', (configInfo, group) => {
             this.setState({
                 unlocked: true,
-                timerInfo: timerInfo
+                configInfo: configInfo,
+                group: group
             })
         })
 
-        this.socket.on('unlock testing', (timerInfo) => {
+        this.socket.on('unlock testing', (configInfo) => {
             this.setState({
                 unlocked: true,
-                timerInfo: timerInfo
+                configInfo: configInfo
             })
         })
 
-        this.socket.on('unlock rating', (timerInfo) => {
+        this.socket.on('unlock rating', (configInfo) => {
             this.setState({
                 unlocked: true,
-                timerInfo: timerInfo
+                configInfo: configInfo
             })
         })
 
-        this.socket.on('unlock 2AFC', () => {
-            this.setState({unlocked: true})
+        this.socket.on('unlock 2AFC', (configInfo) => {
+            this.setState({
+                unlocked: true,
+                configInfo: configInfo
+            })
         })
     }
 

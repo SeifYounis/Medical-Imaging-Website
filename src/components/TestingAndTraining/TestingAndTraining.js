@@ -2,13 +2,15 @@ import { Component } from 'react'
 
 import './testing.css'
 import { fadeOutAndfadeIn } from '../../assets/fadingAnimation'
-import {
-    presentImages,
-    absentImages,
-    presentAnswerImages
-} from '../../assets/loadImages'
+// import {
+//     presentImages,
+//     absentImages,
+//     presentAnswerImages
+// } from '../../assets/loadImages'
 import { Timer } from '../Timer/timer';
+import { loadImages, loadTrainingImages } from '../../assets/loadImages';
 
+let presentImages, absentImages, presentAnswerImages
 let timer = new Timer();
 
 // Every selection contains the following information
@@ -18,6 +20,48 @@ let timer = new Timer();
 // Answer user gave
 // Name of the image with unique identifier
 // Type of image
+
+// Testing 1 and testing 2
+// Separate images folder for training
+
+function configureImages(numImages, group) {
+    let numPresentImages;
+    let numAbsentImages;
+    let numPresentAnswerImages;
+
+    let images;
+
+    if(group === null) {  // If no group, we are on the testing assessment
+        images = loadImages()
+
+        console.log(images.presentImages)
+        console.log(images.absentImages)
+
+        presentImages = images.presentImages.slice(0, numImages/2)
+        absentImages = images.absentImages.slice(0, numImages/2)
+        presentAnswerImages = images.presentAnswerImages.slice(0, numImages/2)
+
+    } else { // Otherwise, we are on training
+        images = loadTrainingImages()
+
+        console.log(images.absentTrainingImages)
+        console.log(images.presentAnswerImages)
+        console.log(images.presentTrainingImages)
+        
+        if (group === 'A') {
+            numPresentImages = Math.ceil(2 * numImages / 3)
+        } else if (group === 'B') {
+            numPresentImages = Math.floor(numImages / 3)
+        }
+
+        numPresentAnswerImages = numPresentImages
+        numAbsentImages = numImages - numPresentImages
+    
+        presentImages = images.presentTrainingImages.slice(0, numPresentImages)
+        presentAnswerImages = images.presentAnswerImages.slice(0, numPresentAnswerImages)
+        absentImages = images.absentTrainingImages.slice(0, numAbsentImages)
+    }
+}
 
 class TestingAndTraining extends Component {
     constructor() {
@@ -34,12 +78,6 @@ class TestingAndTraining extends Component {
             testOver: false
         }
     }
-
-    // Set up web socket
-    // socket = io()
-
-    // HOST = window.location.origin.replace(/^http/, 'ws')
-    // ws = new WebSocket(this.HOST);
 
     // Load new image
     newImage() {
@@ -92,7 +130,7 @@ class TestingAndTraining extends Component {
         this.setState({
             promptImage: image
         })
-
+        
         return image
     }
 
@@ -100,9 +138,7 @@ class TestingAndTraining extends Component {
     processSelection(selectedAnswer) {
         clearInterval(timer.timerInterval);
 
-        if (this.state.totalAnswered < 20) {
-            let date = new Date().toLocaleString()
-
+        if (this.state.totalAnswered < this.props.configInfo.numImages) {
             // Add selection data to 'results' table in database
             fetch('/add-selection', {
                 method: 'POST',
@@ -110,7 +146,7 @@ class TestingAndTraining extends Component {
                     assessment: this.props.assessment,
                     promptImage: this.state.promptImage,
                     answer: selectedAnswer,
-                    answerDate: date,
+                    answerDate: new Date().toLocaleString(),
                     solution: this.state.solution
                 }),
                 headers: {
@@ -123,13 +159,6 @@ class TestingAndTraining extends Component {
             }).catch(err => {
                 console.log(err)
             });
-
-            // Update user entry in 'active_connections' table in database 
-            // const wsData = JSON.stringify({
-            //     current_test: this.props.assessment,
-            //     last_answered: date
-            // })
-            // this.ws.send(wsData)
 
             let resultContainer;
 
@@ -176,32 +205,35 @@ class TestingAndTraining extends Component {
              * False: switch to next prompt image
              * True: end the test
              */
-            if (this.state.totalAnswered + 1 < 20) {
+            if (this.state.totalAnswered + 1 < this.props.configInfo.numImages) {
                 /** 
                  * In the training interface, add a delay before transitioning to the next image so users have time to view feedback. 
                  * No such delay needed for the testing interface
                  * */ 
                 if(this.props.assessment === 'training') {
-                    setTimeout(() => {
+                    setTimeout(() => {    
                         fadeOutAndfadeIn(image, this.newImage());
-    
+                        timer.startTimer(this);
+                    }, 2000)
+
+                    setTimeout(() => {    
                         this.setState({
                             isDisabled: false
-                        }, () => {
-                            timer.startTimer(this);
                         });
-                    }, 2000);
+                    }, 4000);
 
                 } else if(this.props.assessment === 'testing') {
                     console.log(image.style.visibility === 'hidden')
 
                     fadeOutAndfadeIn(image, this.newImage());
     
-                    this.setState({
-                        isDisabled: false
-                    }, () => {
-                        timer.startTimer(this);
-                    });
+                    timer.startTimer(this);
+
+                    setTimeout(() => {
+                        this.setState({
+                            isDisabled: false
+                        });
+                    }, 2000)
                 }
 
 
@@ -214,6 +246,12 @@ class TestingAndTraining extends Component {
     }
 
     componentDidMount() {
+        configureImages(this.props.configInfo.numImages, this.props.group)
+
+        // Display score only if on the training assessment
+        let scoreboard = document.getElementById('scoreboard')
+        scoreboard.style.visibility = this.props.assessment === "training" ? "visible": "hidden"
+
         document.getElementById('medical-scan').src = this.newImage()
 
         timer.startTimer(this);
@@ -235,10 +273,10 @@ class TestingAndTraining extends Component {
         }
 
         return (
-            <body>
+            <div>
                 <div id="testing-container">
-                    <div class="split left">
-                        <div class="centered">
+                    <div className="split left">
+                        <div className="centered">
                             <button
                                 id="scan-button"
                                 disabled={this.state.isDisabled}
@@ -250,23 +288,23 @@ class TestingAndTraining extends Component {
                         </div>
                     </div>
 
-                    <div class="split right" id="split-right">
-                        <div class="top-right">
-                            <h1 class="prompt-testing">Click on the image if you believe it contains a signal. Otherwise, click 'No'</h1>
+                    <div className="split right" id="split-right">
+                        <div className="top-right">
+                            <h1 className="prompt-testing">Click on the image if you believe it contains a signal. Otherwise, click 'No'</h1>
                         </div>
 
-                        <div class="center-right">
-                            <button class="no-button" id="no-button"
+                        <div className="center-right">
+                            <button className="no-button" id="no-button"
                                 disabled={this.state.isDisabled}
                                 onClick={() => {
                                     this.processSelection("No signal");
                                 }}>No
                             </button>
 
-                            <Timer timerInfo={this.props.timerInfo || {timeLimit: 10, secondsVisible: 7}}/>
+                            <Timer configInfo={this.props.configInfo}/>
                         </div>
 
-                        <div class="bottom-right">
+                        <div className="bottom-right" id='scoreboard'>
                             <h2 id="score">
                                 Score: {this.state.correct}/{this.state.totalAnswered}
                             </h2>
@@ -283,7 +321,7 @@ class TestingAndTraining extends Component {
                         INCORRECT
                     </div>
                 </div>
-            </body>
+            </div>
         )
     }
 }

@@ -12,7 +12,14 @@ import tableStyles from "./Table/Table.module.css";
 // Two groups of students
 // Group 1. 2/3 are signal absent, 1/3 are signal present
 // Group 2. 2/3 are signal present, 1/3 are signal absent
-// Add group number to database
+// No images from training should be reused
+
+async function displayResults (url) {
+    const serveHTML = await fetch("/scripts/serve-html")
+
+    const newWindow = window.open(url, '_blank', 'noopener,noreferrer')
+    if (newWindow) newWindow.opener = null
+}
 
 class Admin extends Component {
     constructor() {
@@ -25,6 +32,7 @@ class Admin extends Component {
             num2AFCStudents: 0,
             timeLimit: 0,
             secondsVisible: 0,
+            numImages: 0,
             isDisabled: true
         }
 
@@ -34,6 +42,8 @@ class Admin extends Component {
     // Add row to table of active student connections and updates number of students in section
     addRow = (data, users) => {
         let countToUpdate;
+
+        console.log(data.current_test)
 
         if (data.current_test === "testing") {
             countToUpdate = "numTestingStudents"
@@ -71,49 +81,39 @@ class Admin extends Component {
         })
     }
 
-    serveHTML(e) {
-        alert("Redirecting you to test results")
+    unlockTraining(e) {
+        this.socket.emit('unlock training', {
+            timeLimit: this.state.timeLimit,
+            secondsVisible: this.state.secondsVisible,
+            numImages: this.state.numImages
+        })
 
-        // fetch('/scripts/serve-html')
-        //     .then(res => {
-        //         if (res.ok) return res.text();
-        //     })
-        //     .then(data => {
-        //         console.log(data)
-        //     })
-        //     .catch(err => console.error(err));
+        console.log('Training Unlocked')
     }
 
     unlockTesting(e) {
         // e.preventDefault();
         this.socket.emit('unlock testing', {
             timeLimit: this.state.timeLimit,
-            secondsVisible: this.state.secondsVisible
+            secondsVisible: this.state.secondsVisible,
+            numImages: this.state.numImages
         })
-        console.log("Testing Unlocked")
-        // alert('Testing Unlocked')
-    }
-
-    unlockTraining(e) {
-        this.socket.emit('unlock training', {
-            timeLimit: this.state.timeLimit,
-            secondsVisible: this.state.secondsVisible
-        })
-
-        console.log('Training Unlocked')
+        console.log('Testing Unlocked')
     }
 
     unlockRating(e) {
         this.socket.emit('unlock rating', {
             timeLimit: this.state.timeLimit,
-            secondsVisible: this.state.secondsVisible
+            secondsVisible: this.state.secondsVisible,
+            numImages: this.state.numImages
         })
-
         console.log('Rating Unlocked')
     }
 
     unlock2AFC(e) {
-        this.socket.emit('unlock 2AFC')
+        this.socket.emit('unlock 2AFC', {
+            numImages: this.state.numImages
+        })
         console.log('2AFC Unlocked')
     }
 
@@ -123,12 +123,9 @@ class Admin extends Component {
         this.setState({
             timeLimit: Number(e.target.timeLimit.value),
             secondsVisible: Number(e.target.secondsVisible.value),
+            numImages: Number(e.target.numImages.value),
             isDisabled: false
-        }, () => {
-            console.log('Settings saved')
-
-            // alert('Settings saved');
-        })
+        }, () => console.log('Settings saved'))
     }
 
     componentDidMount() {
@@ -144,12 +141,12 @@ class Admin extends Component {
                     this.addRow(data, users)
                 });
             })
-            .catch(err => console.error(err));
+            .catch(err => console.log("Failed to retrieve active connections"));
 
         this.socket.emit('connect-admin');
 
         this.socket.on('new user', (user) => {
-            if(user) {
+            if (user) {
                 this.addRow(user, users)
             } else {
                 console.log("Socket sent blank data in new user")
@@ -158,28 +155,24 @@ class Admin extends Component {
 
         // Remove active connection event. Delete row and update count
         this.socket.on('remove user', (student) => {
-            if(student) {
-                let countToUpdate;
+            let countToUpdate;
 
-                if (student.current_test === "testing") {
-                    countToUpdate = "numTestingStudents"
-                } else if (student.current_test === "training") {
-                    countToUpdate = "numTrainingStudents"
-                } else if (student.current_test === "rating") {
-                    countToUpdate = "numRatingStudents"
-                } else if (student.current_test === "2AFC") {
-                    countToUpdate = "num2AFCStudents"
-                }
-
-                this.setState({ [countToUpdate]: this.state[countToUpdate] - 1 }, () => {
-                    // console.log(student)
-
-                    let user = document.getElementById(student.id)
-                    user.remove()
-                })
-            } else {
-                console.log('Socket sent empty data in remove user')
+            if (student.current_test.includes("testing")) {
+                countToUpdate = "numTestingStudents"
+            } else if (student.current_test.includes("training")) {
+                countToUpdate = "numTrainingStudents"
+            } else if (student.current_test.includes("rating")) {
+                countToUpdate = "numRatingStudents"
+            } else if (student.current_test.includes("2AFC")) {
+                countToUpdate = "num2AFCStudents"
             }
+
+            this.setState({ [countToUpdate]: this.state[countToUpdate] - 1 }, () => {
+                // console.log(student)
+
+                let user = document.getElementById(student.id)
+                user?.remove()
+            })
         })
     }
 
@@ -197,8 +190,8 @@ class Admin extends Component {
                 <fieldset id="config-tests">
                     <legend>Configure Assessments</legend>
 
-                    <form onSubmit={this.configTests.bind(this)}>
-                        <label>Enter a time limit for each question: {' '}
+                    <form onSubmit={this.configTests.bind(this)} id="">
+                        <label htmlFor="timeLimit">Enter a time limit for each question: {' '}
                             <input
                                 type="number"
                                 name="timeLimit"
@@ -207,10 +200,9 @@ class Admin extends Component {
                                 required>
                             </input>
                         </label>
-
                         <br />
 
-                        <label>Number of seconds image is visible: {' '}
+                        <label htmlFor="secondsVisible">Number of seconds image is visible: {' '}
                             <input
                                 type="number"
                                 name="secondsVisible"
@@ -218,6 +210,18 @@ class Admin extends Component {
                                 placeholder="5 seconds"
                                 required>
                             </input>
+                        </label>
+
+                        <br />
+
+                        <label htmlFor="numImages">Number of images: {' '}
+                            <select id="numImages">
+                                <option value={10}>10</option>
+                                <option value={20}>20</option>
+                                <option value={30}>30</option>
+                                <option value={40}>40</option>
+                                <option value={50}>50</option>
+                            </select>
                         </label>
 
                         <br />
@@ -231,39 +235,47 @@ class Admin extends Component {
                 <fieldset id="unlock-tests">
                     <legend>Unlock Assessments</legend>
 
-                    <button 
-                        className="unlockButton" 
-                        onClick={this.unlockTraining.bind(this)} 
+                    <button
+                        className="unlockButton"
+                        onClick={this.unlockTraining.bind(this)}
                         disabled={this.state.isDisabled}>
                         Unlock Training</button>
                     <span> Students in training section: {this.state.numTrainingStudents}</span>
                     <br />
 
-                    <button 
-                        className="unlockButton" 
+                    <button
+                        className="unlockButton"
                         onClick={this.unlockTesting.bind(this)}
                         disabled={this.state.isDisabled}>
                         Unlock Testing</button>
+                    <br />
                     <span> Students in testing section: {this.state.numTestingStudents}</span>
                     <br />
 
-                    <button 
-                        className="unlockButton" 
-                        onClick={this.unlockRating.bind(this)} 
+                    <button
+                        className="unlockButton"
+                        onClick={this.unlockRating.bind(this)}
                         disabled={this.state.isDisabled}>
                         Unlock Rating</button>
                     <span> Students in rating section: {this.state.numRatingStudents}</span>
                     <br />
 
-                    <button 
-                        className="unlockButton" 
-                        onClick={this.unlock2AFC.bind(this)}>
+                    <button
+                        className="unlockButton"
+                        onClick={this.unlock2AFC.bind(this)}
+                        disabled={this.state.isDisabled}>
                         Unlock 2AFC</button>
                     <span> Students in 2AFC section: {this.state.num2AFCStudents}</span>
                     <br />
                 </fieldset>
 
                 <br />
+
+                <fieldset id="get-results">
+                    <legend>Get Results</legend>
+
+                    <button onClick={() => displayResults('/test-display')}>Serve HTML</button>
+                </fieldset>
 
                 <Table />
 

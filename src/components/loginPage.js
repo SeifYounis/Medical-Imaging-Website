@@ -47,7 +47,8 @@ class LoginPage extends Component {
         if (this.state.usernameSet) {
             return (
                 <body>
-                    <p>Welcome, <strong>{this.state.username}</strong>. You may now proceed to the next assessment</p>
+                    <p>Welcome, <strong>{this.state.username}</strong>. You may now close this page and proceed 
+                    to the first assessment</p>
                 </body>
             )
         }

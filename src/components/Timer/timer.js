@@ -118,10 +118,10 @@ export class Timer extends Component {
     }
 
     componentDidMount() {
-        // console.log(this.props.timerInfo)
+        // console.log(this.props.configInfo)
 
-        TIME_LIMIT = this.props.timerInfo.timeLimit
-        WARNING_THRESHOLD = TIME_LIMIT - this.props.timerInfo.secondsVisible
+        TIME_LIMIT = this.props.configInfo.timeLimit
+        WARNING_THRESHOLD = TIME_LIMIT - this.props.configInfo.secondsVisible
 
         this.timeLeft = TIME_LIMIT;
     }
@@ -148,7 +148,7 @@ export class Timer extends Component {
                         </g>
                     </svg>
                     <span id="base-timer-label" className="base-timer__label">
-                        {this.props.timerInfo.timeLimit}
+                        {this.props.configInfo.timeLimit}
                     </span>
                 </div>
             </div>

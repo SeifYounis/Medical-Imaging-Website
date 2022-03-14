@@ -27,7 +27,16 @@ io.on('connection', (socket) => {
   console.log(session)
 
   socket.on('new user', (data) => {
-    socket.join(data.assessment)
+    // Assign user to either group A or B
+    let assignGroup = (min, max) => {
+      let num = Math.random() * (max - min) + min;
+
+      return Math.round(num);
+    };
+
+    // Student's web socket will join current assessment and group to be assigned if doing the training section
+    let room = data.assessment === 'training' ? data.assessment + (assignGroup(1, 2) == 1 ? "A" : "B") : data.assessment
+    socket.join(room)
 
     io.to("admin").emit("new user", {
       student_id: session.student_id,
@@ -44,7 +53,8 @@ io.on('connection', (socket) => {
     ON CONFLICT (session_id) DO NOTHING`, [
       session.id,
       session.student_id,
-      session.username,
+      data.username,
+      // session.username,
       data.assessment,
       data.joined
     ], (err, result) => {
@@ -52,24 +62,25 @@ io.on('connection', (socket) => {
     })
   })
 
-  socket.on('unlock training', (timerInfo) => {
-    io.to('training').emit('unlock training', timerInfo)
+  socket.on('unlock training', (configInfo) => {
+    io.to('trainingA').emit('unlock training', configInfo, "A")
+    io.to('trainingB').emit('unlock training', configInfo, "B")
   })
 
-  socket.on('unlock testing', (timerInfo) => {
-    io.to('testing').emit('unlock testing', timerInfo)
+  socket.on('unlock testing', (configInfo) => {
+    io.to('testing').emit('unlock testing', configInfo)
   })
 
-  socket.on('unlock rating', (timerInfo) => {
-    io.to('rating').emit('unlock rating', timerInfo)
+  socket.on('unlock rating', (configInfo) => {
+    io.to('rating').emit('unlock rating', configInfo)
   })
 
-  socket.on('unlock 2AFC', () => {
-    io.to('2AFC').emit('unlock 2AFC')
+  socket.on('unlock 2AFC', (configInfo) => {
+    io.to('2AFC').emit('unlock 2AFC', configInfo)
   })
 
   socket.on('disconnecting', () => {
-    let [, room] = socket.rooms;
+    let [, room] = socket.rooms
     console.log(`Disconnected. Socket has left ${room}`)
 
     io.to("admin").emit('remove user', {

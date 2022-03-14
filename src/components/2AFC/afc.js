@@ -2,13 +2,21 @@ import React, { Component } from 'react'
 
 import './afc.css'
 import { fadeOutAndfadeIn } from '../../assets/fadingAnimation'
-import {
-    presentImages,
-    absentImages
-} from '../../assets/loadImages'
+import { loadImages } from '../../assets/loadImages';
+// import {
+//     presentImages,
+//     absentImages
+// } from '../../assets/loadImages'
+
+let {presentImages, absentImages} = loadImages()
 
 // Signal absent image in prompt_image and signal present image in solution
 // Image selected will go into answer
+
+function configureImages(numImages) {
+    presentImages = presentImages.slice(0, numImages/2)
+    absentImages = absentImages.slice(0, numImages/2)
+}
 
 class AlternateChoices extends Component {
     constructor() {
@@ -60,17 +68,9 @@ class AlternateChoices extends Component {
 
             // Put correct image on left and set left button as correct answer
             if (side === 0) {
-                // this.setState({
-                //     solution: "Left image contains signal"
-                // })
-
                 leftImage = presentImage
                 rightImage = absentImage
             } else {
-                // this.setState({
-                //     solution: "Right image contains signal"
-                // })
-
                 leftImage = absentImage
                 rightImage = presentImage
             }
@@ -89,7 +89,7 @@ class AlternateChoices extends Component {
     }
 
     processSelection(selectedSide) {
-        if (this.state.totalAnswered < 10) {
+        if (this.state.totalAnswered < this.props.configInfo.numImages) {
             this.setState({
                 clickDisabled: true,
                 keyDisabled: true,
@@ -107,8 +107,9 @@ class AlternateChoices extends Component {
                 })
             }
 
-            let nextPair = this.newPair();
-            let date = new Date().toLocaleString();
+            console.log("Prompt image is " + this.state.promptImage)
+            console.log("Solution is " + this.state.solution)
+            console.log("Answer is " + selectedSide)
 
             fetch('/add-selection', {
                 method: 'POST',
@@ -116,7 +117,7 @@ class AlternateChoices extends Component {
                     assessment: this.props.assessment,
                     promptImage: this.state.promptImage,
                     answer: selectedSide,
-                    answerDate: date,
+                    answerDate: new Date().toLocaleString(),
                     solution: this.state.solution
                 }),
                 headers: {
@@ -127,6 +128,8 @@ class AlternateChoices extends Component {
             }).then(function (body) {
                 console.log(body);
             });
+
+            let nextPair = this.newPair();
 
             // Update user entry in 'active_connections' table in database 
             // const wsData = JSON.stringify({
@@ -157,34 +160,7 @@ class AlternateChoices extends Component {
     }
 
     componentDidMount() {
-        // Set up web socket
-        // let socket = io()
-
-        // // Send client data to admin
-        // socket.emit('new user', {
-        //     assessment: this.props.assessment,
-        //     joined: new Date().toLocaleString(),
-        // })
-
-        // socket.on('unlock 2AFC', () => {
-        //     this.setState({unlocked: true})
-        // })
-
-        // fetch('/users/get-username')
-        // .then(res => {
-        //     if (res.ok) return res.json();
-        // }).then(data => {
-        //     if (data.username) {
-        //         let socket = io()
-
-        //         socket.emit('new user', {
-        //             assessment: this.props.assessment,
-        //             joined: new Date().toLocaleString(),
-        //             username: data.username
-        //             // username: this.state.username
-        //         })
-        //     }
-        // }).catch(err => console.error(err));
+        configureImages(this.props.configInfo.numImages)
 
         var firstPair = this.newPair()
 
@@ -195,17 +171,14 @@ class AlternateChoices extends Component {
         // Add event listener so certain keystrokes are linked to responses
         document.addEventListener('keydown', (event) => {
             if (!this.state.keyDisabled) {
-                if (event.key === "f" || event.key === "j") {
+                if (event.key === "f") {
+                    let currentLeft = this.state.leftImage;
+                    this.processSelection(currentLeft)
+                }
 
-                    if (event.key === "f") {
-                        let currentLeft = this.state.leftImage;
-                        this.processSelection(currentLeft)
-                    }
-
-                    else if (event.key === "j") {
-                        let currentRight = this.state.rightImage;
-                        this.processSelection(currentRight)
-                    }
+                else if (event.key === "j") {
+                    let currentRight = this.state.rightImage;
+                    this.processSelection(currentRight)
                 }
             }
         });
@@ -223,7 +196,7 @@ class AlternateChoices extends Component {
             })
 
             return (
-                <p>You have completed the <b>{this.props.assessment}</b> assessment</p>
+                <p>You have completed the <b>{this.props.assessment}</b> assessment. You may now close this window</p>
             )
         }
 
@@ -231,21 +204,21 @@ class AlternateChoices extends Component {
 
         return (
             <div>
-                <div class="header" id="afc-prompt">
-                    <h1 class="afc-prompt part-1">
+                <div className="header" id="afc-prompt">
+                    <h1 className="afc-prompt part-1">
                         One of these images contains a signal.
                         Click on the image you believe contains a signal.
                     </h1>
 
-                    <h1 class="afc-prompt part-2">
+                    <h1 className="afc-prompt part-2">
                         You can also press 'F' to select the left image or 'J' to select the right image
                     </h1>
                 </div>
 
-                <div class="split left" id="split-afc">
-                    <div class="centered">
+                <div className="split left" id="split-afc">
+                    <div className="centered">
                         <button
-                            class="image-button"
+                            className="image-button"
                             id="image-button"
                             disabled={this.state.clickDisabled}
                             onClick={() => {
@@ -257,10 +230,10 @@ class AlternateChoices extends Component {
                     </div>
                 </div>
 
-                <div class="split right" id="split-afc">
-                    <div class="centered">
+                <div className="split right" id="split-afc">
+                    <div className="centered">
                         <button
-                            class="image-button"
+                            className="image-button"
                             id="image-button"
                             disabled={this.state.clickDisabled}
                             onClick={() => {

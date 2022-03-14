@@ -4,18 +4,26 @@
 
 function importAll(r) {
     let images = [];
-    r.keys().map((item, index) => { 
-        return images[index] = r(item); 
+
+    r.keys().map((item, index) => {
+        return images[index] = r(item);
     });
+
     return images;
-  }
+}
 
-var presentImages = importAll(require.context('../images/targetPresentImages', false, /\.(png|jpe?g|svg)$/));
-var presentAnswerImages = importAll(require.context('../images/targetPresentAnswerImages', false, /\.(png|jpe?g|svg)$/));
-var absentImages = importAll(require.context('../images/targetAbsentImages', false, /\.(png|jpe?g|svg)$/));
+export function loadImages() {
+    let presentImages = importAll(require.context('../images/Present', false, /\.(png|jpe?g|svg)$/));
+    let absentImages = importAll(require.context('../images/Absent', false, /\.(png|jpe?g|svg)$/));
+    let presentAnswerImages = importAll(require.context('../images/Answer', false, /\.(png|jpe?g|svg)$/));
+    
+    return {presentImages, absentImages, presentAnswerImages}
+}
 
-export {
-    presentImages,
-    absentImages,
-    presentAnswerImages
+export function loadTrainingImages() {
+    let presentTrainingImages = importAll(require.context('../trainingImages/Present', false, /\.(png|jpe?g|svg)$/));
+    let absentTrainingImages = importAll(require.context('../trainingImages/Absent', false, /\.(png|jpe?g|svg)$/));
+    let presentAnswerImages = importAll(require.context('../trainingImages/Answer', false, /\.(png|jpe?g|svg)$/));
+
+    return {presentTrainingImages, absentTrainingImages, presentAnswerImages}
 }

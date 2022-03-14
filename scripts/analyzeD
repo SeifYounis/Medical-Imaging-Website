@@ -1,0 +1,984 @@
+# This version is 2021-03-01
+#from __future__ import unicode_literals
+from sqlite3 import connect
+import numpy as np
+import matplotlib, datetime
+matplotlib.use('Agg')
+import matplotlib.pylab as pp
+import matplotlib.mlab as mlab
+from matplotlib.lines import Line2D
+import re,sys,os,types,io,math
+from collections import defaultdict  as dd
+import numpy.lib.recfunctions as rec
+import ROC
+from dotenv import load_dotenv
+import psycopg2
+
+scriptoutput=""
+load_dotenv()
+
+def Phi(x):    #CDF standard normal
+    return (1.0 + math.erf(x / np.sqrt(2.0))) / 2.0
+ 
+def gettable(DATABASE_URL,tablename,assessment=None):
+	# Get date from an PostgreSQL database. 
+	conn = psycopg2.connect(DATABASE_URL, sslmode='require')
+	cur = conn.cursor()
+
+	# Potential queries include
+	# SELECT * FROM frank
+	# SELECT * FROM frank WHERE DATE_TRUNC('day', answer_date) >= current_date - interval '1 day';
+	# SELECT * FROM frank WHERE DATE_TRUNC('hour', answer_date) >= current_date - interval '1 hour';
+	# SELECT * FROM frank WHERE DATE_TRUNC('week', answer_date) = current_date
+	# SELECT * FROM frank WHERE DATE_TRUNC('year', answer_date) = current_date;
+
+	# Pass data to fill query placeholders and let Psycopg perform the correct conversion (no more SQL injections!)
+	# cur.execute("INSERT INTO test (num, data) VALUES (%s, %s)", (100, "abc'def"))
+
+	# Query the database and obtain data as list of tuples. This gets you all results data obtained at present day
+#	query = "SELECT * FROM "+tablename+" WHERE DATE_TRUNC('day', answer_date) = current_date"
+	query = "SELECT * FROM "+tablename+" "
+	if assessment:
+		if 'WHERE' in query:
+			query=query+" AND ASSESSEMENT = '"+assessment+"';"
+		else:
+			query=query+" WHERE assessment = '"+assessment+"';"
+
+	cur.execute(query)
+	data = cur.fetchall()
+
+	# If you want to fetch one at a time, you can do
+	# data = list()
+	# row = cur.fetchone()
+	# while row is not None:
+	#     data.append(row)
+	#     row = cur.fetchone()
+
+	# Close communication with the database
+	cur.close(); conn.close()
+
+	# 'assessment' column possible entries: testing, training, rating, 2AFC
+	# 'answer' column possible entries: Signal present, No signal, No answer, number (if rating), <image name> (if 2AFC)
+	# 'solution' column possible entries: Signal present, No signal, <image name> (if 2AFC)
+
+	# A sample of the data I retrieve from the results table
+	# "uiFq6Wne6TgXIq3trEXoReOJ0F4fbVRE"	"ac9a070e220b97f16616734f0ab0cfd6f65c8c09"	"seif"	"testing"	"/static/media/Absent8.70f255c8.jpg"	"No signal"	        "No signal"	        "2022-01-11 10:04:25+00"
+	# "uiFq6Wne6TgXIq3trEXoReOJ0F4fbVRE"	"ac9a070e220b97f16616734f0ab0cfd6f65c8c09"	"seif"	"testing"	"/static/media/Present4.47744e78.jpg"	"Signal present"	"Signal present"	"2022-01-11 10:04:31+00"
+	# "uiFq6Wne6TgXIq3trEXoReOJ0F4fbVRE"	"ac9a070e220b97f16616734f0ab0cfd6f65c8c09"	"seif"	"testing"	"/static/media/Present6.aeb21def.jpg"	"No answer"	        "Signal present"	"2022-01-11 10:04:44+00"
+
+	# Create Pandas DataFrame using data
+	#df = pd.DataFrame(data, columns =['session_id', 'student_id', 'username', 'assessment', 'prompt_image', 'answer', 'solution', 'answer_date'])
+
+	# Or a Numpy recarray if that's more your style
+	arr = np.array(data, dtype=[('session_id', 'object'), ('student_id', 'object'),
+			('username', 'object'), ('assessment', 'object'), ('prompt_image', 'object'),
+			('answer', 'object'), ('solution', 'object'), ('answer_date', 'object')])
+	return arr.view(np.recarray)
+
+
+def sigim3(x):
+	# A function that gets the truth state of the data.
+	y=[]
+	s=x.solution
+	p=x.prompt_image
+	for i in range(len(x)):
+		si=s[i]
+		if 'present' in si or "Present" in si:
+			y.append(True); continue
+		if 'No' in si or 'no' in si:
+			y.append(False); continue
+		if 'Absent' in si or 'absent' in si:
+			y.append(False); continue
+		pi=p[i]
+		if 'present' in pi or "Present" in pi:
+			y.append(True); continue
+		if 'Absent' in pi or 'absent' in pi:
+			y.append(False); continue
+		if 'No' in pi or 'no' in pi:
+			y.append(False); continue
+		y.append(False)
+	return(np.array(y))
+
+mtch=re.compile('-?\d+\.?\d*')
+def score1(x):
+	# More data munging.
+#	if type(x)==type(''):  # A string type
+	if isinstance(x, str): # A string type
+		if 'No' in x or 'absent' in x or 'neg' in x:  return(-100.)
+		if 'present' in x or 'pos' in x: return(100.)
+		if 'not answer' in x: return(-100.)
+		digs=mtch.fullmatch(x)
+		if not digs: return(np.nan)
+		x=digs[0]
+	try: 
+		return(float(x))
+	except:
+		return(np.nan)
+def score(x):  # Turn vector into scores
+	return(np.array([score1(i) for i in x]))
+
+def casename(x):  # Truncate names of prompts
+	return(np.array([ i.split('/')[-1] for i in x]))
+
+def getprev(x):  # Assign group to users based on prevalence
+	return(np.sum(x.truth)/float(len(x)))
+			 
+def rmna(x):  # Remove the NAs and other bad stuff.
+	return( x[np.isfinite(x)])
+
+def by(name,func,x):  # My own version of the R by function.
+	rtn=[]
+	lvls=np.unique(x[name])
+	for lvl in lvls:
+		try:
+			y=x[ x[name]==lvl ]  # Scores for this reader
+			yf=func(y)
+			if yf: rtn.append(yf) #rtn.append((func(y),lvl))
+		except:
+			sys.stderr.write('* function '+str(func)+' failed in by()\n');
+			sys.stderr.flush()
+			pass
+	return(rtn)
+
+def bydict(name,func,x):  # My own version of the R by function. returns dict
+	rtn={}
+	lvls=np.unique(x[name])
+	for lvl in lvls:
+		try:
+			y=x[ x[name]==lvl ]  # Scores for this reader
+			yf=func(y)
+			rtn[lvl]=yf #rtn.append((func(y),lvl))
+		except: pass
+	return(rtn)
+
+def recify(rtn):  # Flatten results
+	rtna=np.vstack(rtn).flatten()
+	rtna=rtna.view(np.recarray)
+	return(rtna)
+
+def mkdict(name,zar):  # Create a dictionary with references to our array
+	rtn={}
+	for i in zar:
+		try: 
+			rtn[i[name]]=i
+		except: pass
+	return(rtn)
+
+
+#import sys; sys.argv="thisscript frank 2AFC".split()
+
+#if __name__ == "__main__":
+if True:
+	# get script arguments
+	dbtable=sys.argv[1]
+	partno=sys.argv[2]
+
+	DATABASE_URL = "postgres://pmfelvdmtnoyix:0f5df0325b7a23b2c22fea6a30f4a5bdba7f469e966077e7a9e71b43f09f3018@ec2-54-205-232-84.compute-1.amazonaws.com:5432/d8rnaofcbn3hpq"
+
+	responses=gettable(DATABASE_URL,dbtable)  # Read in the database.
+	if not len(responses):
+		sys.stderr.write("Empty Table\n"); sys.exit(3);
+
+	#Points table:  The part/assessment/task name: 0,TP points, TN points
+	pointstable={ "training":(0,0,0), "testing":(0,1,1), "testing2":(0,10,1), 
+					  "rating":(0,0,0), "2AFC":(0,0,0)}
+
+	
+	# Add  truth and score columns
+#	responses=mlab.rec_append_fields(responses,["truth","score",'case'],
+	responses=rec.append_fields(responses,["truth","score",'case'],
+               (sigim3(responses),score(responses.answer),
+                casename(responses.prompt_image)), asrecarray=True)
+
+	trainparty=responses[responses.assessment=='training']
+	trprevs=bydict("username",getprev,trainparty) #What was training prev for users?
+	def groupify(prv):  # Group readers by prevalence.
+		if prv<0.5: return 1;
+		if prv>0.5: return 2;
+		return 0;
+	groupNumbers={ i:groupify(trprevs[i]) for i in trprevs}
+
+
+	if True:
+		party=responses[responses.assessment==partno]
+
+		decthr = 0.  # The "decision threshold"
+		def binscores(x):
+			return((x>0).astype(float))
+
+		def sensfps(x):  # Calculate sensitivity and spec
+			sigsc=rmna(x[x.truth].score)
+			abssc=rmna(x[~x.truth].score)
+			if not len(sigsc) or not len(abssc): return(None)
+			tnN=np.sum(abssc<= decthr)
+			tpN=np.sum(sigsc> decthr)
+			fpf=np.mean(abssc>= decthr)
+			tpf=np.mean(sigsc> decthr)
+			tnNSD=np.sqrt(fpf*(1.-fpf)*len(abssc))
+			fpfSD=tnNSD*len(abssc)
+			tpNSD=np.sqrt(tpf*(1.-tpf)*len(sigsc))
+			tpfSD=tpNSD*len(sigsc)
+			if np.isnan(fpf) or np.isnan(tpf): return(None)
+			lmda=np.log(fpf)/np.log(tpf)
+			try:
+				scr= tpN* pointstable[partno][1]+tnN* pointstable[partno][2]
+			except:
+				sys.stderr.write('* failed to assign points for user '+x.username[0]+'\n')
+				sys.stderr.flush()
+				scr=np.nan
+			npres=np.sum(x.truth)
+			result=(fpf,tpf,lmda,lmda/(lmda+1.),tnN,tpN, scr,-scr,
+			    groupNumbers[x[0].username],x[0].username,(tpf+1.-fpf)/2., (tpf+fpf)/2.,
+					  npres,len(x)-npres, fpfSD,tnNSD,tpfSD,tpNSD,trprevs[x[0].username])
+			rtn=np.array( [result] , dtype=[
+                     ('fpf',float), ('tpf',float),
+                     ('Powerindex',float),("AUC",float),
+                     ("TN",int),("TP",int), ("score",float),
+                     ('negscore',float),("group",int),
+                     ('username',x.username.dtype),('Youden',float),
+                     ('Anti-Youden',float), ('Napos',float),
+                     ('Naneg',float),
+							('fpf-SD',float),('TN-SD',float),('tpf-SD',float),
+							('TP-SD',float),('trainingprevalence',float)
+			    ])
+			rtn=rtn.view(np.recarray)
+			return(rtn)
+
+		if "2AFC" not in partno:
+			# The variable z contains sensitivities, specificities
+			z=recify(by("username",sensfps,party)) # Calculate Se,sp for each user
+			z.sort(order='negscore') # Sort in decreasing score order
+			zdict=mkdict('username',z)
+
+		if False:
+			print(z,file=sys.stderr)
+			print(zdict,file=sys.stderr)
+			sys.exit(3)
+
+		def rddatafunc(x): 
+			x=x[np.argsort(x.case)]  # Sort by case names
+			sigsc=rmna(x[x.truth].score)
+			abssc=rmna(x[~x.truth].score)
+			return((abssc,sigsc))
+		def rocc(x):  # Calculate roc curve
+			sigsc=rmna(x[x.truth].score)
+			abssc=rmna(x[~x.truth].score)
+			if not len(sigsc) or not len(abssc): return(None)
+			a,vara=ROC.simpleAUCvar(sigsc,abssc)
+			try:
+				xxax,uvara=ROC.unbiasedAUCvar(sigsc,abssc)
+			except: pass
+			snr=(np.mean(sigsc)-np.mean(abssc))/np.sqrt(np.var(sigsc)+np.var(abssc))
+			psnr=Phi(snr)
+
+			# the random fizz added to -a below is to prevent ties...
+			return(np.array([(ROC.rocxy(sigsc,abssc),a, 
+			                  -a+np.random.random()*1e-6, a/(1.-a),
+									groupNumbers[x[0].username], x[0].username,snr,psnr, 
+									np.sqrt(vara),np.sqrt(uvara)	)], 
+			           dtype=[ ('roc',object), ('auc',float), 
+                       ('negauc',float), ('Powerindex',float), 
+                       ("group",int), ('username',x.username.dtype),
+			           ('SNR',float),('pSNR',float),('auc-SD',float),
+						  ('auc-uSD',float)]))
+
+		if "2AFC" not in partno:
+			# The variable zroc contains all the ROC information.
+			zroc=recify(by("username",rocc,party)) # Calculate ROC for each user
+			zroc.sort(order='negauc')
+			zrocdict=mkdict("username",zroc)
+			rddata=bydict("username",rddatafunc,party) # Make structure of all scores
+			try:
+				n0max=np.max([len(i[0]) for i in rddata.values()])
+				n1max=np.max([len(i[1]) for i in rddata.values()])
+				#Dump the readers who do not have scores for all images.
+				rddataGood=dict([ (i,rddata[i]) for i in rddata
+									if len(rddata[i][0])==n0max and len(rddata[i][1])==n1max ])
+				rddata2=[ i for i in rddataGood.values()]
+				#print(rddata2)
+				# Data clean up
+				mrmcresults=ROC.MRMCvariance(rddata2)
+				
+				# Do binary MRMC.
+				# Acutal positives
+				possuccess=np.array([ binscores(i[1]) for i in rddata2 ])
+				sensMRMC=ROC.unbiasedMeanMatrixVar(possuccess)
+				negsuccess=np.array([ binscores(i[0]) for i in rddata2 ])
+				specMRMC=ROC.unbiasedMeanMatrixVar(possuccess)
+			except:
+				sys.stderr.write("* MRMC analysis failed\n");sys.stderr.flush()
+				pass
+		
+			try: 
+				scordict=dd(dict)  # A dictionary of dictionaries
+				casetruthdict=dd(dict)			
+				for i in party:
+					scordict[i.username][i.case]=i.score
+					casetruthdict[i.case]=i.truth
+			except: pass
+
+			if False:
+				print(zroc,file=sys.stderr)
+				print(zrocdict,file=sys.stderr)
+				sys.exit(3)
+
+		def scoresnstuff(x):
+			casesp=np.unique(x.case[x.truth])
+			casesn=np.unique(x.case[~x.truth])
+			cases=np.concatenate((casesp,casesn))
+			readers=np.unique(party.username)
+
+			scorz={}
+			#print(scordict)
+			def inloop(z): return ((np.array([ z[j] for j in casesn ]), 
+			                        np.array([ z[j] for j in casesp ])))
+			for i in scordict: scorz[i]=inloop(scordict[i])
+#			np.array([ inloop(scordict[i]) for i in scordict])
+			return(scorz)
+		try:
+			# CRAP this does not work for for the word part. 
+			# Get this fixed.
+			scorzdict=scoresnstuff(party)  
+			scorz=[ scorzdict[i] for i in scorzdict ]
+		except:
+			pass
+
+	if True:
+		def stp(lbl="TPF"):   # Set up a figure for ROC plot
+			matplotlib.rcParams.update({'font.size': 18})
+			fig = pp.figure(1,figsize=(4.6, 4.6))      
+			ax = fig.add_axes((.12,.12,.78,.78))
+#			pp.axis([-.005,1.005,-.005,1.005])
+			ax2=ax.twiny()
+			ax2.axis([1.005,-.005,-.005,1.005])
+			ax.axis([-.005,1.005,-.005,1.005])
+
+
+
+			if lbl=="TPF":
+				# Axis labels for the ROC curves
+				ax.set_xlabel('False Positive Fraction')
+				ax.set_ylabel('Sensitivity / True Positive Fraction')
+				ax2.set_xlabel('Specificity / True Negative Fraction')
+			else:
+				# Axis labels for the memory curves.
+				ax.set_xlabel('Incorrect Blue Fraction')
+				ax.set_ylabel('Correct Red Fraction')
+				ax2.set_xlabel('Correct Blue Fraction')
+			return( (fig,ax) )
+		def endp(fig):   # Close figure, return image text
+			fig.set_size_inches(8,8)
+			buf=io.StringIO()
+			fig.savefig(buf,format='svg',dpi=1200)  # Write the figure into a variable
+			fig.clf()
+			return(buf.getvalue())   # This works, tested it.
+
+
+		def plotmeanlambda(lmdas,col='k'):
+			lmdas2=lmdas[ np.logical_and(lmdas > 1, lmdas < 1.e4)]
+			mlmda=np.exp(np.mean(np.log(lmdas2))) # mean lambda
+			xx=np.arange(0,1,.01)
+			ax.plot(xx, xx**(1./mlmda),'-',lw=15,color=col,alpha=.3)
+			
+		def plotlambdalimits(lmdas):
+			lmdas=np.sort(lmdas)
+			l1=len(lmdas)
+			i1=int(l1/6.)
+			i2=int(l1*5./6.)+1
+			if i2>=l1 : i2=l1-1
+			xx=np.arange(0,1,.01)
+			for ii in lmdas[i1],lmdas[i2]: # power law curve
+				ax.plot(xx, xx**(1./ii),'-',lw=10,color='k',alpha=.3)
+				#ax.plot(xx, xx**(1./3.8),'-',lw=20,color='k',alpha=.3)
+
+		def addmeanpowerlaw(lambdas=None,ROC=False):
+			if not lambdas:
+				if ROC:
+					areas=np.array([ i[0][1] for i in zroc ])
+					lambdas=areas/(1.-areas)
+				else:
+					lambdas=np.array([ i[0][2] for i in z ])
+			plotmeanlambda(lambdas)
+
+		def addROC(ax,toplot=None):
+			if not toplot: toplot=zroc
+			for i in toplot:
+				ax.plot(i['roc']['x'],i['roc']['y'],'-')
+			ax.plot(np.array((0,1)),np.array((0,1)),':')
+
+
+		grps=["bo",'r*','gv','ms']
+		colors = ('b', 'r', 'g', 'm', 'c', 'y', 'k')
+
+		def textify(ax,x):
+			ax.text(x['fpf']+0.01,x['tpf'],x['username'],
+			        verticalalignment='top')
+
+		def addBinPoints(ax,toplot=None,groups=None):
+			if not toplot: toplot=z
+			legdict={}
+			for x in toplot:
+				pch=grps[0]
+				label=''
+				if groups: 
+					try:
+						pch=grps[groups[x['username']]%len(grps)]
+						label="Group "+str(groups[x['username']])
+					except:
+						continue
+				stor,=ax.plot(x['fpf'],x['tpf'],pch,label=label,ms=7)
+				legdict[pch]=(stor , label)
+				textify(ax,x)
+			if groups:
+				leglst=[ legdict[i][0] for i in legdict]
+				lablst=[ legdict[i][1] for i in legdict]
+				ax.legend(leglst,lablst,loc=4)
+
+		def correlation_plot():
+			fig = pp.figure(1,figsize=(4.6, 4.6))      
+			ax = fig.add_axes((.12,.12,.85,.85))
+			ax.axis([.4,1.005,.4,1.005])
+			if True:
+				# Axis labels for the ROC curves
+				ax.set_xlabel('AUC')
+				ax.set_ylabel(r"Youden's Index or Norm(SNR)")
+				p1,=ax.plot(zroc['auc'],zroc['pSNR'],grps[0],
+				           label=r"Norm(SNR)")
+				if False: 
+					for ii in zroc:	ax.text(ii['auc']+0.01,ii['pSNR'],
+				        ii['username'], verticalalignment='top')
+				youd=[zdict[i]['Youden'] for i in zroc['username']]
+				p2,=ax.plot(zroc['auc'],youd,grps[1],label="Youden's Index")
+				ax.plot((.4,1.),(.4,1.),'y--')
+				ax.legend([p1,p2],[r"Norm(SNR)","Youden's Index"],loc=4)
+			return endp(fig)  # End the plot
+
+		def simpROCplot(toplot=None,lbl='TPF',groups=None):
+			fig,ax = stp(lbl=lbl);   #  with points and names.
+			addROC(ax,toplot=toplot)
+			addBinPoints(ax,toplot=toplot,groups=groups)
+			return endp(fig);   # return the figure
+		def simpbinplot(toplot=None,groups=None,lbl='TPF'):
+			#Make a simple binary plot 
+			fig,ax = stp(lbl=lbl);    # with points and names.
+			ax.plot([0,1],[0,1],'y:')
+			ax.text(0.5,0.5,'Guessing Line',color='y',rotation=45,rotation_mode='anchor')
+			addBinPoints(ax,toplot=toplot,groups=groups)
+			return endp(fig);
+
+		def addYouden(ax,toplot=None):
+			if not toplot: toplot=z
+			for x in toplot:
+				stor,=ax.plot([0,x['fpf'],1],[0,x['tpf'],1],'--y')
+
+		def individROCs(lbl='TPF'):
+			j=0
+			lof=[]
+			for i in zdict:
+				try:
+					fig,ax = stp(lbl=lbl);    # with points and names.
+					addBinPoints(ax,toplot=[zdict[i],])
+					if i in zrocdict:
+						addROC(ax,toplot=[zrocdict[i],])
+					try:   # Youden approximation
+						if i in zdict:
+							addYouden(ax,toplot=[zdict[i],])
+					except:	pass
+
+					lof.append(endp(fig))
+					j=j+1
+				except: pass
+			return(lof)
+
+		## Some HTML convenience functions
+		htmlskip='<br><br><br><br><br><br><br><br><br><br><br><br>\n'
+		tblntryMT='<TD> &nbsp;&nbsp;</TD>\n'
+		def tblntryd(x,ln='center'):   # Integer table entry
+			return '<TD align="'+ln+'"><font size=4>%d</font></TD>\n'%x
+		def tblntrys(x,ln='center'):   
+			return '<TD align="'+ln+'"><font size=4>%s</font></TD>\n'%x
+		def tblntryf(x,ln='center'):   # Floating point table entry
+			return '<TD align="'+ln+'"><font size=4>%.3f</font></TD>\n'%x
+		def tblntryfsdf(x,ln='center'):   # Floating point table entry
+			return '<TD align="'+ln+'"><font size=4>%.3f (%.3f)</font></TD>\n'%x
+		def tblntrydsdf(x,ln='center'):  # Integer table entry + float error
+			return '<TD align="'+ln+'"><font size=4>%d (%.1f)</font></TD>\n'%x
+
+		def bintbl():
+			## Throw in the table of scores 
+			hdr="""<A name="binScoretable"></A>
+                   <B><font size=6>Binary Table</font></B><br>
+                   <table cellpadding=3 cellspacing=3>
+                   <TR><TD><B><font size=5>  NAME  </font></B></TD>
+                   <TD><B><font size=5> &nbsp;&nbsp; </font></B></TD>
+                   <TD><B><font size=5>  No. of TP  </font></B></TD>
+                   <TD><B><font size=5> &nbsp;&nbsp; </font></B></TD>
+                   <TD><B><font size=5>  No. of TN  </font></B></TD>
+                   <TD><B><font size=5> &nbsp;&nbsp; </font></B></TD>
+                   <TD><B><font size=5>  Points  </font></B></TD></TR>"""  
+
+			for i in z:
+				try:	
+					hdr+='<TR><TD align="left"><font size=4>%s</font></TD>'\
+							%i['username']
+					for j in ((i['TP'],i['TP-SD']),(i['TN'],i['TN-SD'])):
+						hdr+=tblntryMT+tblntrydsdf(j)  # TP and TN with errors
+
+					hdr+=	tblntryMT+tblntryd(i['score']) # User's score
+
+				except: pass
+			hdr+="\n</table><br>\n"
+			return(hdr)
+
+		def auctbl():   # Make a table of AUCs.
+			hdr="""<A name="AUCtable"></A>
+                   <B><font size=6>AUC Table</font></B><br>
+                   <table cellpadding=3 cellspacing=3>
+                   <TR><TD><B><font size=5>  NAME  </font></B></TD>
+                   <TD><B><font size=5> &nbsp;&nbsp; </font></B></TD>
+                   <TD><B><font size=5>  AUC  </font></B></TD>
+                   <TD><B><font size=5> &nbsp;&nbsp; </font></B></TD>
+                   <TD><B><font size=5>  Y = Youden's Index =(Se+Sp)/2 </font></B></TD>
+                   <TD><B><font size=5> &nbsp;&nbsp; </font></B></TD>
+                   <TD><B><font size=5> Difference </font></B></TD>
+                   <TD><B><font size=5> &nbsp;&nbsp; </font></B></TD>
+                   <TD><B><font size=5> &Phi;(SNR) </font></B></TD>
+                   </TR>"""  
+
+			aucavg=np.zeros(4)
+			for i in zroc:
+				hdr+='<TR>'+tblntrys(i['username'],'left')+tblntryMT
+#				hdr+=tblntryf(i['auc'])+tblntryMT
+				hdr+=tblntryfsdf((i['auc'],i['auc-uSD']))+tblntryMT
+				if i['username'] in zdict:
+					youd=zdict[i['username']]['Youden']
+					hdr+=tblntryf(youd)+tblntryMT+ tblntryf(i['auc']-youd)
+				else:
+					youd=0
+					hdr+=2*tblntryMT
+				gappr=Phi(i['SNR']) # Gaussian approximation
+				hdr+=tblntryMT+ tblntryf(gappr)
+				aucavg+=np.array((i['auc'],youd,i['auc']-youd,gappr))
+				hdr+='</TR>'
+			aucavg/=len(zroc)
+			hdr+='<tr><td colspan=9><hr></td></tr>\n' # Horizontal line
+			hdr+='<tr><td align="left"><font size=5><B>Mean</B></font></td>\n'\
+			    +tblntryMT
+			try:
+				try:
+					hdr+=tblntryfsdf((aucavg[0],np.sqrt(mrmcresults[1])))+tblntryMT
+				except:
+					hdr+=tblntryfsdf((aucavg[0],np.sqrt(mrmcresults[1])))+tblntryMT
+			except: pass
+				
+			for i in 1,3:  hdr+=tblntryf(aucavg[i])+tblntryMT
+			hdr+="</tr>\n</table><br>\n"
+			return(hdr)
+
+
+		def makehtml(hcodes):
+			## This routine takes a number of sections of html code
+			## and combines them into a single html file,
+			## where each html section has links
+			## to the next and previous sections.
+			buf=io.StringIO()
+			bw=buf.write
+			bw(htmlhdr())
+			
+			for i in range(len(hcodes)):
+				bw('<A name="ANQ%03d"></A>\n'%i)  # Anchor for section
+				bw(hcodes[i]+'<br>')
+				# Put in the anchors for the previous next items.
+				if i:
+					htmlc='<a href="#ANQ%03d">Previous</a> &nbsp; '%(i-1)
+				else:
+					htmlc='Previous &nbsp; '
+				if i < len(hcodes)-1:
+					htmlc+='<a href="#ANQ%03d">Next</a><br>\n' % (i+1)
+				else:
+					htmlc+='Next<br>\n'
+				bw(htmlc)
+				bw(4*htmlskip)
+			bw('\n</body>\n</html>\n')
+			return buf.getvalue()#.encode('utf8')
+
+		def htmlhdr():
+			hdr='<html>\n<head><title>Results Part  %s</title><meta charset="UTF-8"></head>\n' % partno
+			hdr+="<body> \n"
+			return(hdr)
+
+		def dumpcsvdata(filename='tmp'):
+			# First we have to figure out what we are dumping.
+			# Which readers have usable data?
+			lusers=np.unique(party.username)
+			lcases=casetruthdict.keys()
+			uncase={}
+			for u in lusers:
+				try:  # Count how many successful cases each reader has
+					uncase[u]=sum(np.isfinite(np.array([scordict[u][i] 
+																	for i in lcases])))
+				except: pass
+			ncaser=np.array(uncase.values())
+			tohave=np.max(ncaser) #readers have to have these cases
+			nreaders=sum(tohave==ncaser)
+
+			npos=np.sum(casetruthdict.values())
+			nneg=len(lcases)-npos
+				
+			# First write in the Gallas, et al. format
+#			if True:
+			try:
+				fp=open(filename+".imrmc",'w') 
+				fp.write('Data from part '+str(partno)+' reader study class on '+
+							str(datetime.datetime.now())+'\n')
+				fp.write('N0: %d\n'%nneg)
+				fp.write('N1: %d\n'%npos)
+				fp.write('NR: %d\n'%nreaders)
+				fp.write('NM: 1\nBEGIN DATA:\n')
+				li=0
+				for i in lcases:
+					fp.write("-1,%d,0,%d\n"%(li ,casetruthdict[i]))
+
+				ui=0
+				m=1
+				for u in lusers:
+					li=0
+					if uncase[u]==tohave:
+						ui+=1
+						for i in lcases:
+							li+=1
+							fp.write("%d,%d,%d,%f\n"%(ui,li,m,scordict[u][i]))
+				fp.close()
+			except: pass
+			# Then write the DBM file format....
+#			if True: 
+			try:
+				fp=open(filename+".txt",'w') 
+				fp.write('Data from part '+str(partno)+' reader study class on '+
+							str(datetime.datetime.now())+'\n')
+				top=True
+				for u in lusers:
+					if uncase[u]!=tohave: continue
+					fp.write(u+'\n')
+					if top:
+						top=False
+						fp.write("Mode1\nLarge\n")
+					for truei in False,True:
+						for i in lcases:
+							if casetruthdict[i]==truei:
+								fp.write("%f\n"%(scordict[u][i]))
+						fp.write("*\n")		
+
+				fp.close()
+			except: pass
+
+
+		# Below is the code that is run uniquely for each part of the 
+		# presentation.
+
+		try:
+			dumpcsvdata(filename='/var/www/html/Class/ClassResults/ReaderStudyData-Part-%s'%partno);
+		except: 
+			sys.stderr.write("Could not dump csv data\n")
+
+		if partno=='training':   # This is the training data
+			pass    # Ha! forget it! we make nothing for you.
+
+		if 'testing' in partno:  # and partstbl.interfaceType[partno-1]=='Binary':
+			try:
+				# The first binary test
+				tablebin=bintbl()
+			except: pass
+			try:
+				# Make a plot and the associated html code
+				fig1html=simpbinplot()
+			except: pass
+
+			try:				# Mark points by groups in the first part.
+				fig2html=simpbinplot(groups=groupNumbers)
+			except: pass
+
+				## How students were grouped based on training prevalence
+			htmlc=["""<A name="groupTable"></A>
+    <B><font size=6>Training groups in part 1</font></B><br>
+    <table cellpadding=3 cellspacing=3> <TR>
+    <TD align="center"><B><font size=5> Group </font></B></TD>
+    <TD align="center"><B><font size=5> &nbsp;&nbsp; </font></B></TD>
+    <TD align="center"><B><font size=5>  Percent of class  </font></B></TD>
+    <TD align="center"><B><font size=5> &nbsp;&nbsp; </font></B></TD> 
+    <TD align="center"><B><font size=5>  Prevalence  </font></B></TD>
+    </TR>\n<TR>""",]
+			try:
+				def meanprev(gz):
+					# For each group, calculate
+					tfa=np.array([gz.trainingprevalence,gz['tpf'],1-gz['fpf'],gz['Youden']])
+					return(np.concatenate((np.mean(tfa,axis=1), (len(gz)/float(len(z)),))))
+				p1groups=bydict('group', meanprev,z)
+				
+				for i in p1groups:
+					htmlc.append('<TR>')
+					try:
+						htmlc.append( tblntryd(i)+tblntryMT)
+						for fld in (4,0):
+							htmlc.append(tblntrys("%.0f"% (p1groups[i][fld]*100)+"%"))
+							htmlc.append(tblntryMT)
+						if i['signalHandling']=="Threefourths":
+							htmlc.append(tblntrys("Actual positives"))
+						else:
+							htmlc.append(tblntrys("Actual negatives"))
+					except: pass
+					htmlc.append('</TR>\n')
+			except: pass
+			htmlc.append('</table>\n')
+			htmlc="\n".join(htmlc)
+
+			## Calculate the average TPF, FPF, Youden's index. by groups
+			# Use medians
+			tbl2=["""<A name="groupAvgPerf"></A>
+    <B><font size=6>Average Performance for Each Group</font></B><br>
+    <table cellpadding=3 cellspacing=3> <TR>
+    <TD align="center"><B><font size=5>  Group  </font></B></TD>
+    <TD align="center"><B><font size=5> &nbsp;&nbsp; </font></B></TD> 
+    <TD align="center"><B><font size=5>  Median Sensitivity  </font></B></TD>
+    <TD align="center"><B><font size=5> &nbsp;&nbsp; </font></B></TD> 
+    <TD align="center"><B><font size=5>  Median Specificity  </font></B></TD>
+    <TD align="center"><B><font size=5> &nbsp;&nbsp; </font></B></TD> 
+    <TD align="center"><B><font size=5>  Median Y=(Sens+Spec)/2 </font></B></TD>
+    </TR>\n """,]
+			# Use averages
+			tbl2=["""<A name="groupAvgPerf"></A>
+    <B><font size=6>Average Performance for Each Group</font></B><br>
+    <table cellpadding=3 cellspacing=3> <TR>
+    <TD align="center"><B><font size=5>  Group  </font></B></TD>
+    <TD align="center"><B><font size=5> &nbsp;&nbsp; </font></B></TD> 
+    <TD align="center"><B><font size=5>  Mean Sensitivity  </font></B></TD>
+    <TD align="center"><B><font size=5> &nbsp;&nbsp; </font></B></TD> 
+    <TD align="center"><B><font size=5>  Mean Specificity  </font></B></TD>
+    <TD align="center"><B><font size=5> &nbsp;&nbsp; </font></B></TD> 
+    <TD align="center"><B><font size=5>  Mean Y=(Sens+Spec)/2 </font></B></TD>
+    </TR>\n """,]
+
+			try:
+				for j in p1groups:
+					# Generate HTML code for table of summary stats by group.
+					tbl2.append('<TR>\n')
+					tbl2.append(tblntryd(j)+tblntryMT)
+					for i in p1groups[j][1:4]:  tbl2.append(tblntryf(i)+tblntryMT)
+					tbl2.append('\n</TR>\n')
+				tbl2.append('<tr><td colspan=7><hr></td></tr>\n')
+				if len(p1groups)>1:
+					tbl2.append('<TR>\n'+tblntrys("Difference")+tblntryMT)
+					for i in p1groups[0][1:4]-p1groups[1][1:4]:
+						tbl2.append(tblntryf(i)+tblntryMT)
+					tbl2.append('\n</TR>')
+			except: pass	
+
+			tbl2.append('</table><br>\n')
+			tbl2="\n".join(tbl2)
+			scriptoutput=makehtml((tablebin,fig1html,htmlc,fig2html,tbl2))
+			
+
+		if partno=='Skip' :  # We just reuse the 
+			lof=[]
+			try:
+				lof.append(simpbinplot())
+			except: pass
+
+			try:
+				# Compare with previous experiment
+				party2=responses[responses.partNumber==partno-1]
+				# Recalculate part 2
+				z2=recify(by("username",sensfps,party2))
+				z2dict=mkdict('username',z2)
+
+				# Loop over all observers, only 3 per plot
+				nuserperim=30
+				imct=0
+				j=0
+				ssAdel=np.array((0,0.,0.)) # Change in sens,spec, "auc"
+				for u in zdict:
+					try:
+						if u in z2dict:
+							if not imct:   # Create new plot.
+								fig,ax = stp(); 
+							xs=np.array((zdict[u]['fpf'],z2dict[u]['fpf']))
+							ys=np.array((zdict[u]['tpf'],z2dict[u]['tpf']))
+							ssAdel+=np.array((-np.diff(xs)[0],np.diff(ys)[0],
+					                 (np.diff(ys)[0] - np.diff(xs)[0] )/2.))
+							#	ax.plot( xs,ys, grps[imct%len(grps)])
+							#	ax.plot(xs,ys,'-', color=colors[imct%len(colors)])
+							ax.arrow(xs[1],ys[1],xs[0]-xs[1],ys[0]-ys[1],
+					         width=.01,
+					         head_width=.03,length_includes_head=True,
+					         color=colors[imct%len(colors)])
+							textify(ax,z2dict[u])
+							# ax.plot((0,xs[1]),(0,ys[1]),':',
+							# color=colors[imct%len(colors)])
+							j+=1
+							imct+=1
+							if imct==nuserperim:
+								lof.append(endp(fig))
+								imct=0
+					except:  pass 
+				if imct: lof.append(endp(fig))  # Close image file.
+				ssAdel/=j   # Take the average...
+				## Generate the web page.
+				lof.append(bintbl())
+			except:  pass
+
+			## Add a table showing average change in sens, spec, auc
+			htmlc=["""<A name="ChangeTable"></A>
+<B><font size=6>Change in Se, Sp, and Sum Measures</font></B><br>
+<table cellpadding=3 cellspacing=3> <TR>
+<TD align="center"><B><font size=5>  Sensitivity  </font></B></TD>
+<TD align="center"><B><font size=5> &nbsp;&nbsp; </font></B></TD>		
+<TD align="center"><B><font size=5>  Specificity  </font></B></TD>
+<TD align="center"><B><font size=5> &nbsp;&nbsp; </font></B></TD>		
+<TD align="center"><B><font size=5>  Y=(Sens+Spec)/2 </font></B></TD>
+</TR>\n <TR>""",]
+			for i in ssAdel:
+				htmlc.append(tblntryf(i)+tblntryMT)
+			htmlc.append('</TR></table><br>') #+4*htmlskip
+			lof.append("\n".join(htmlc))
+
+			scriptoutput=makehtml(lof)
+
+
+		if partno=="rating":
+
+			lof=[]
+			if True:  # Not for Dave's presentation.
+				try:
+					lof.append(simpbinplot())
+				except: pass
+			
+			try:
+				lof.append(simpROCplot())
+			except: pass
+
+			# OK now make an ROC plot for each reader
+			try:
+				lof.extend(individROCs())
+			except: pass
+
+			# Add a table of AUCs and binary scores
+			try:
+				lof.append(auctbl())
+			except: pass
+
+			try:
+				lof.append(correlation_plot())
+			except: pass
+
+			lof.append(bintbl())
+
+
+			# Make a table comparing SD of se,sp,auc
+			htmlc="""<A name="VariabilityTable"></A>
+<B><font size=6>Variability Across Experiments</font></B><br>
+<table cellpadding=3 cellspacing=3> <TR>
+<TD align="center"><B><font size=5>  NAME  </font></B></TD>
+<TD align="center"><B><font size=5> &nbsp;&nbsp; </font></B></TD>
+<TD align="center"><B><font size=5> Mean Sens </font></B></TD>
+<TD align="center"><B><font size=5> &nbsp;&nbsp; </font></B></TD>
+<TD align="center"><B><font size=5> Std Dev Sens  </font></B></TD>
+<TD align="center"><B><font size=5> &nbsp;&nbsp; </font></B></TD>
+<TD align="center"><B><font size=5> Mean Spec  </font></B></TD>
+<TD align="center"><B><font size=5> &nbsp;&nbsp; </font></B></TD>
+<TD align="center"><B><font size=5> Std Dev Spec  </font></B></TD>
+<TD align="center"><B><font size=5> &nbsp;&nbsp; </font></B></TD>
+<TD align="center"><B><font size=5> Mean Y=(Se+Sp)/2  </font></B></TD>
+<TD align="center"><B><font size=5> &nbsp;&nbsp; </font></B></TD>
+<TD align="center"><B><font size=5> Std Dev Y  </font></B></TD>
+</TR>"""
+			try:
+				#Look at variability in Se, sp, AUC across 3 experiments by reader?
+				allz={}
+				allzroc={}
+				acctype=[('name','S200'),('seMean',float),
+			        ('seSTD',float),('spMean',float),('spSTD',float),
+			        ('aucMean',float),('aucSTD',float)]
+				tfauc=np.array([],dtype=acctype)
+				partses=(2,3,4)
+				for parti in partses:
+					try:
+						party=responses[responses.partNumber==parti]
+						zner=recify(by("username",sensfps,party) )
+						allz[parti]=mkdict('username',zner)
+						zner=recify(by("username",rocc,party))
+						allzroc[parti]=mkdict("username",zner)
+					except: pass
+				rdrs=allz[4].keys()
+				for rd in rdrs:
+					try:
+						if rd in allz[2] and rd in allz[3] and rd in allz[4]:
+							tpfs=np.array([ allz[i][rd]['tpf'] for i in partses])
+							fpfs=1-np.array([ allz[i][rd]['fpf'] for i in partses])
+							aucish=(tpfs+fpfs)/2.
+
+							rdperf=(rd,np.mean(tpfs),np.std(tpfs),np.mean(fpfs),
+									  np.std(fpfs),np.mean(aucish), np.std(aucish))
+
+							htmlc+='<TR>'+tblntrys(rd,'left')
+							for i in rdperf[1:7]:
+								htmlc+=tblntryMT + tblntryf(i)
+							htmlc+='</TR>\n'   # End of line
+							tfauc=np.append(tfauc,np.array(rdperf,dtype=acctype))
+					except: pass
+
+				tfauc=tfauc.view(np.recarray)
+
+				htmlc+='<tr><td colspan=13><hr></td></tr>\n'
+				htmlc+='<tr><td align="left"><font size=5><B>Mean</B></font></td>\n'
+				for i in range(1,7):
+					htmlc+=tblntryMT+tblntryf(np.mean(tfauc.field(i)))
+				htmlc+='\n</tr>\n<tr><td align="left"><font size=5><B>Mean /Std.Dev</B></font></td>\n'
+				for i in (1,3,5):
+					for j in 1,2,3: htmlc+=tblntryMT
+					htmlc+=tblntryf(np.mean(tfauc.field(i))/np.mean(tfauc.field(i+1)))
+				htmlc+='</tr>'
+			except: pass
+			htmlc+='</table><br>'
+			lof.append(htmlc)
+			scriptoutput=makehtml(lof)
+
+		if partno=='2AFC':
+			# No curves or plots here, just AUC.
+			def auc2afc(x):
+				auc= np.mean(x.answer==x.solution)
+				sdauc= np.sqrt(auc*(1.-auc)/len(x))
+				rtn=np.array( [(auc,-auc,sdauc,x.username[0])],
+ 					dtype=[ ('auc',float),('neg',float),
+							  ('sdauc',float),('username',x.username.dtype)])
+				rtn=rtn.view(np.recarray)
+				return(rtn)
+
+			zafc=recify(by("username",auc2afc,party)) # Calculate Se,sp for each user
+			zafc.sort(order='neg')
+
+			htmlc=["""<A name="AUCtable"></A>
+             <B><font size=6>AUC Table</font></B><br>
+             <table cellpadding=3 cellspacing=3>
+             <TR><TD><B><font size=5>  NAME  </font></B></TD>
+             <TD><B><font size=5> &nbsp;&nbsp; </font></B></TD>
+             <TD><B><font size=5>  AUC (sd) </font></B></TD>
+             </TR>""" ,]
+			for i in zafc:
+				try:
+					htmlc.append('<TR>'+tblntrys(i.username,'left')+tblntryMT)
+					htmlc.append(tblntryfsdf((i['auc'],i['sdauc']))+'</TR>\n')
+				except: pass
+			htmlc.append('<tr><td colspan=3><hr></td></tr>\n') # Horizontal line
+			htmlc.append('<tr><td align="left"><font size=5><B>Mean</B></font></td>\n'
+							 +tblntryMT)
+			htmlc.append(tblntryf(np.mean(zafc.auc))+'</tr>\n')
+			htmlc.append("</table><br>\n")
+			htmlc="\n".join(htmlc)
+			scriptoutput=makehtml([htmlc,])
+
+with open('./static/test.html', "w", encoding="utf-8") as o:
+	o.write(scriptoutput)
+
+# with open("output.html", "w", encoding="utf-8") as o:
+#     o.write(scriptoutput)
+# sys.stdout.write(scriptoutput)

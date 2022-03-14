@@ -4,13 +4,12 @@ import {
   Route,
   BrowserRouter
 } from "react-router-dom";
+import Admin from './components/admin';
 import LoginPage from './components/loginPage';
 import AccessAssessment from './components/accessAssessment';
-import TestingAndTraining from './components/TestingAndTraining/TestingAndTraining';
-import Admin from './components/admin';
-import Rating from './components/Rating/rating';
-import AlternateChoices from './components/2AFC/afc';
-// import Home from './pages/home';
+// import TestingAndTraining from './components/TestingAndTraining/TestingAndTraining';
+// import Rating from './components/Rating/rating';
+// import AlternateChoices from './components/2AFC/afc';
 
 export function App() {
   return(
@@ -22,33 +21,30 @@ export function App() {
         <Route path="/testing">
           <AccessAssessment assessment="testing"/>
         </Route>
-        <Route path="/just-testing">
+        {/* <Route path="/just-testing">
           <TestingAndTraining assessment="testing"/>
-        </Route>
+        </Route> */}
         <Route path="/training">
           <AccessAssessment assessment="training"/>
         </Route>
-        <Route path="/just-training">
+        {/* <Route path="/just-training">
           <TestingAndTraining assessment="training"/>
-        </Route> 
+        </Route>  */}
         <Route path="/rating">
           <AccessAssessment assessment="rating"/>
         </Route>
-        <Route path="/just-rating">
+        {/* <Route path="/just-rating">
           <Rating assessment="rating"/>
-        </Route>
+        </Route> */}
         <Route path="/alternate-choice">
           <AccessAssessment assessment="2AFC"/>
         </Route>
-        <Route path="/just-alternate-choice">
+        {/* <Route path="/just-alternate-choice">
           <AlternateChoices assessment="2AFC"/>
-        </Route>
+        </Route> */}
         <Route path="/login">
           <LoginPage/>
         </Route>
-        {/* <Route path="/">
-          <Home/>
-        </Route> */}
       </Switch>
     </BrowserRouter>
   )

@@ -1,17 +1,19 @@
 import { Component } from 'react'
 
 import { fadeOutAndfadeIn } from '../../assets/fadingAnimation'
-import {
-    presentImages,
-    absentImages
-} from '../../assets/loadImages'
+// import {
+//     presentImages,
+//     absentImages
+// } from '../../assets/loadImages'
 import { Timer } from '../Timer/timer';
 
 import './rating.css'
 import Slider from 'rc-slider';
 import 'rc-slider/assets/index.css';
+import { loadImages } from '../../assets/loadImages';
 
 let timer = new Timer();
+let {presentImages, absentImages} = loadImages()
 
 // Left rating at 0 and it timed out: no activity
 // Rating at 0 and confirmed/everything else: intentional answer
@@ -25,6 +27,11 @@ let timer = new Timer();
 // Type of image
 
 // Fade in new image without fading out old image if it disappears
+
+function configureImages(numImages) {
+    presentImages = presentImages.slice(0, numImages/2)
+    absentImages = absentImages.slice(0, numImages/2)
+}
 
 class Rating extends Component {
     constructor() {
@@ -97,18 +104,7 @@ class Rating extends Component {
 
         clearInterval(timer.timerInterval);
 
-        // if (selectedSide === this.state.correctSide) {
-        //     this.setState({
-        //         score: (this.state.correct + 1)/(this.state.totalAnswered + 1),
-        //         correct: this.state.correct + 1
-        //     })
-        // } else {
-        //    this.setState({
-        //         score: this.state.correct/(this.state.totalAnswered + 1),
-        //     })
-        // }
-
-        if (this.state.totalAnswered < 20) {
+        if (this.state.totalAnswered < this.props.configInfo.numImages) {
             this.setState({
                 buttonDisabled: true,
                 totalAnswered: this.state.totalAnswered + 1,
@@ -138,14 +134,7 @@ class Rating extends Component {
                 console.log(body);
             });
 
-            // Update user entry in 'active_connections' table in database 
-            // const wsData = JSON.stringify({
-            //     current_test: this.props.assessment,
-            //     last_answered: date
-            // })
-            // this.ws.send(wsData)
-
-            if (this.state.totalAnswered + 1 < 20) {
+            if (this.state.totalAnswered + 1 < this.props.configInfo.numImages) {
                 fadeOutAndfadeIn(image, this.newImage());
 
                 timer.startTimer(this)
@@ -171,14 +160,7 @@ class Rating extends Component {
     }
 
     componentDidMount() {
-        fetch('/users/get-username')
-            .then(res => {
-                if (res.ok) return res.json();
-            }).then(data => {
-                if (data.username) {
-                    console.log(data.username)
-                }
-            }).catch(err => console.error(err));
+        configureImages(this.props.configInfo.numImages)
 
         let image = document.getElementById('medical-scan')
         image.src = this.newImage()
@@ -198,7 +180,7 @@ class Rating extends Component {
             })
 
             return (
-                <p>You have completed the <b>{this.props.assessment}</b> assessment</p>
+                <p>You have completed the <b>{this.props.assessment}</b> assessment. You may now close this window</p>
             )
         }
 
@@ -310,7 +292,7 @@ class Rating extends Component {
 
                     </div>
 
-                    <Timer timerInfo={this.props.timerInfo || {timeLimit: 10, secondsVisible: 7}}/>
+                    <Timer configInfo={this.props.configInfo || {timeLimit: 10, secondsVisible: 7}}/>
                 </div>
             </body>
         )
