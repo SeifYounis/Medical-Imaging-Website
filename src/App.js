@@ -18,8 +18,11 @@ export function App() {
         <Route path="/admin">
           <Admin/>
         </Route>
-        <Route path="/testing">
-          <AccessAssessment assessment="testing"/>
+        <Route path="/testing1">
+          <AccessAssessment assessment="testing1"/>
+        </Route>
+        <Route path="/testing2">
+          <AccessAssessment assessment="testing2"/>
         </Route>
         {/* <Route path="/just-testing">
           <TestingAndTraining assessment="testing"/>

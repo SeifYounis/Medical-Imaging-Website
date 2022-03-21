@@ -81,30 +81,32 @@ exports.handleLaunch = (req, res, next) => {
             req.session.canvas_lti_launch_params = provider.body;
             req.session.student_id = provider.body.user_id
 
-            if(provider.body.custom_canvas_assignment_title === "Reader Study Login") {
+            if(provider.body.custom_canvas_assignment_title.includes("Reader Study Login")) {
               return res.redirect('/login')
             }
 
-            if(provider.body.custom_canvas_assignment_title === "Testing") {
-              return res.redirect('/testing');
+            if(provider.body.custom_canvas_assignment_title.includes("Testing Part 1")) {
+              return res.redirect('/testing1');
             }
 
-            if(provider.body.custom_canvas_assignment_title === "Training") {
+            if(provider.body.custom_canvas_assignment_title.includes("Testing Part 2")) {
+              return res.redirect('/testing2');
+            }
+
+            if(provider.body.custom_canvas_assignment_title.includes("Training")) {
               return res.redirect('/training');
             }
 
-            if(provider.body.custom_canvas_assignment_title === "Rating") {
+            if(provider.body.custom_canvas_assignment_title.includes("Rating")) {
               return res.redirect('/rating');
             }
 
-            if(provider.body.custom_canvas_assignment_title === "Two Alternate Forced Choice") {
+            if(provider.body.custom_canvas_assignment_title.includes("Two Alternative Forced Choice")) {
               return res.redirect('/alternate-choice');
             }
           }
 
           return res.send(`It looks like this LTI wasn't launched as an assignment`);
-
-        // });
         
       } else {
         return next(err);

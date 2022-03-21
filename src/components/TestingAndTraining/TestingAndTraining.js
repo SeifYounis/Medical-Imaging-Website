@@ -222,7 +222,7 @@ class TestingAndTraining extends Component {
                         });
                     }, 4000);
 
-                } else if(this.props.assessment === 'testing') {
+                } else if(this.props.assessment.includes('testing')) {
                     console.log(image.style.visibility === 'hidden')
 
                     fadeOutAndfadeIn(image, this.newImage());
@@ -268,7 +268,7 @@ class TestingAndTraining extends Component {
             })
 
             return (
-                <p>You have completed the <b>{this.props.assessment}</b> assessment. Your grade has been successfully posted. You may now close this window</p>
+                <p>You have completed the <b>{this.props.assessment}</b> assessment. You may now close this tab</p>
             )
         }
 

@@ -24,10 +24,10 @@ class AccessAssessment extends Component {
         // Display message if instructor hasn't unlocked the test
         if (!this.state.unlocked) {
             return (
-                <h2>Please wait for the instructor to unlock this test</h2>
+                <h2>Please wait for the instructor to unlock the <b>{this.props.assessment}</b> assessment</h2>
             )
         } else {
-            if (this.props.assessment === "testing" || this.props.assessment === 'training') {
+            if (this.props.assessment.includes("testing") || this.props.assessment === 'training') {
                 return <TestingAndTraining
                     configInfo={this.state.configInfo}
                     assessment={this.props.assessment}

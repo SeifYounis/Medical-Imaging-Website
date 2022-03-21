@@ -14,8 +14,8 @@ let {presentImages, absentImages} = loadImages()
 // Image selected will go into answer
 
 function configureImages(numImages) {
-    presentImages = presentImages.slice(0, numImages/2)
-    absentImages = absentImages.slice(0, numImages/2)
+    presentImages = presentImages.slice(0, numImages)
+    absentImages = absentImages.slice(0, numImages)
 }
 
 class AlternateChoices extends Component {
@@ -196,11 +196,9 @@ class AlternateChoices extends Component {
             })
 
             return (
-                <p>You have completed the <b>{this.props.assessment}</b> assessment. You may now close this window</p>
+                <p>You have completed the <b>{this.props.assessment}</b> assessment. You may now close this tab</p>
             )
         }
-
-        // console.log(`Username at this point is ${username}`)
 
         return (
             <div>

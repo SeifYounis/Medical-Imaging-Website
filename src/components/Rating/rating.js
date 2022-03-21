@@ -180,7 +180,7 @@ class Rating extends Component {
             })
 
             return (
-                <p>You have completed the <b>{this.props.assessment}</b> assessment. You may now close this window</p>
+                <p>You have completed the <b>{this.props.assessment}</b> assessment. You may now close this tab</p>
             )
         }
 
@@ -235,7 +235,7 @@ class Rating extends Component {
                             marks={{
                                 "-10": {
                                     style: { fontSize: "1.3em", color: "black" },
-                                    label: <div>10<br /> <br /><strong style={{ color: "red", marginLeft: '3vw' }}>No signal</strong></div>
+                                    label: <div>-10<br /> <br /><strong style={{ color: "red", marginLeft: '3vw' }}>No signal</strong></div>
                                 },
                                 "-8": {
                                     style: { fontSize: "1.3em", color: "black" },

@@ -14,20 +14,21 @@ import tableStyles from "./Table/Table.module.css";
 // Group 2. 2/3 are signal present, 1/3 are signal absent
 // No images from training should be reused
 
-async function displayResults (url) {
-    const serveHTML = await fetch("/scripts/serve-html")
+// async function displayResults (url) {
+//     const serveHTML = await fetch("/scripts/serve-html")
 
-    const newWindow = window.open(url, '_blank', 'noopener,noreferrer')
-    if (newWindow) newWindow.opener = null
-}
+//     const newWindow = window.open(url, '_blank', 'noopener,noreferrer')
+//     if (newWindow) newWindow.opener = null
+// }
 
 class Admin extends Component {
     constructor() {
         super();
 
         this.state = {
-            numTestingStudents: 0,
             numTrainingStudents: 0,
+            numTestingStudents1: 0,
+            numTestingStudents2: 0,
             numRatingStudents: 0,
             num2AFCStudents: 0,
             timeLimit: 0,
@@ -45,8 +46,10 @@ class Admin extends Component {
 
         console.log(data.current_test)
 
-        if (data.current_test === "testing") {
-            countToUpdate = "numTestingStudents"
+        if (data.current_test === "testing1") {
+            countToUpdate = "numTestingStudents1"
+        } else if (data.current_test === "testing2") {
+            countToUpdate = "numTestingStudents2"
         } else if (data.current_test === "training") {
             countToUpdate = "numTrainingStudents"
         } else if (data.current_test === "rating") {
@@ -87,18 +90,16 @@ class Admin extends Component {
             secondsVisible: this.state.secondsVisible,
             numImages: this.state.numImages
         })
-
-        console.log('Training Unlocked')
+        alert('Training Unlocked')
     }
 
-    unlockTesting(e) {
-        // e.preventDefault();
-        this.socket.emit('unlock testing', {
+    unlockTesting(assessment) {
+        this.socket.emit(`unlock ${assessment}`, {
             timeLimit: this.state.timeLimit,
             secondsVisible: this.state.secondsVisible,
             numImages: this.state.numImages
         })
-        console.log('Testing Unlocked')
+        alert('Testing Unlocked')
     }
 
     unlockRating(e) {
@@ -107,14 +108,14 @@ class Admin extends Component {
             secondsVisible: this.state.secondsVisible,
             numImages: this.state.numImages
         })
-        console.log('Rating Unlocked')
+        alert('Rating Unlocked')
     }
 
     unlock2AFC(e) {
         this.socket.emit('unlock 2AFC', {
             numImages: this.state.numImages
         })
-        console.log('2AFC Unlocked')
+        alert('2AFC Unlocked')
     }
 
     configTests(e) {
@@ -125,7 +126,7 @@ class Admin extends Component {
             secondsVisible: Number(e.target.secondsVisible.value),
             numImages: Number(e.target.numImages.value),
             isDisabled: false
-        }, () => console.log('Settings saved'))
+        }, () => alert('Settings saved'))
     }
 
     componentDidMount() {
@@ -157,8 +158,10 @@ class Admin extends Component {
         this.socket.on('remove user', (student) => {
             let countToUpdate;
 
-            if (student.current_test.includes("testing")) {
-                countToUpdate = "numTestingStudents"
+            if (student.current_test.includes("testing1")) {
+                countToUpdate = "numTestingStudents1"
+            } else if (student.current_test.includes("testing2")) {
+                countToUpdate = "numTestingStudents2"
             } else if (student.current_test.includes("training")) {
                 countToUpdate = "numTrainingStudents"
             } else if (student.current_test.includes("rating")) {
@@ -180,12 +183,6 @@ class Admin extends Component {
         return (
             <div className="admin-page">
                 <h1>Admin Page</h1>
-
-                {/* <a href="/final-results" target="_blank">
-                    <button onClick={this.serveHTML.bind(this)}>
-                        Click to serve HTML
-                    </button>
-                </a> */}
 
                 <fieldset id="config-tests">
                     <legend>Configure Assessments</legend>
@@ -221,6 +218,7 @@ class Admin extends Component {
                                 <option value={30}>30</option>
                                 <option value={40}>40</option>
                                 <option value={50}>50</option>
+                                <option value={60}>60</option>
                             </select>
                         </label>
 
@@ -245,11 +243,18 @@ class Admin extends Component {
 
                     <button
                         className="unlockButton"
-                        onClick={this.unlockTesting.bind(this)}
+                        onClick={() => this.unlockTesting("testing1")}
                         disabled={this.state.isDisabled}>
-                        Unlock Testing</button>
+                        Unlock Testing 1</button>
+                    <span> Students in testing 1 section: {this.state.numTestingStudents1}</span>
                     <br />
-                    <span> Students in testing section: {this.state.numTestingStudents}</span>
+
+                    <button
+                        className="unlockButton"
+                        onClick={() => this.unlockTesting("testing2")}
+                        disabled={this.state.isDisabled}>
+                        Unlock Testing 2</button>
+                    <span> Students in testing 2 section: {this.state.numTestingStudents2}</span>
                     <br />
 
                     <button
@@ -262,8 +267,7 @@ class Admin extends Component {
 
                     <button
                         className="unlockButton"
-                        onClick={this.unlock2AFC.bind(this)}
-                        disabled={this.state.isDisabled}>
+                        onClick={this.unlock2AFC.bind(this)}>
                         Unlock 2AFC</button>
                     <span> Students in 2AFC section: {this.state.num2AFCStudents}</span>
                     <br />
@@ -271,30 +275,13 @@ class Admin extends Component {
 
                 <br />
 
-                <fieldset id="get-results">
+                {/* <fieldset id="get-results">
                     <legend>Get Results</legend>
 
                     <button onClick={() => displayResults('/test-display')}>Serve HTML</button>
-                </fieldset>
+                </fieldset> */}
 
                 <Table />
-
-                {/* <br />
-
-                <fieldset id="ac-search">
-                    <legend>Search Active Connections</legend>
-                    <label>Search students by username: </label>
-                    <input type="text" id="username-search" placeholder="Search usernames.."></input>
-
-                    <label>Search students by ID: </label>
-                    <input type="text" id="id-search" placeholder="Search ID's.."></input>
-
-                    <label><input type="checkbox"></input>Testing </label>
-                    <label><input type="checkbox"></input>Training </label>
-                    <label><input type="checkbox"></input>Rating </label>
-                    <label><input type="checkbox"></input>2AFC </label>
-
-                </fieldset> */}
             </div >
         )
     }

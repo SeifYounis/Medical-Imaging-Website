@@ -67,8 +67,12 @@ io.on('connection', (socket) => {
     io.to('trainingB').emit('unlock training', configInfo, "B")
   })
 
-  socket.on('unlock testing', (configInfo) => {
-    io.to('testing').emit('unlock testing', configInfo)
+  socket.on('unlock testing1', (configInfo) => {
+    io.to("testing1").emit('unlock testing', configInfo)
+  })
+
+  socket.on('unlock testing2', (configInfo) => {
+    io.to("testing2").emit('unlock testing', configInfo)
   })
 
   socket.on('unlock rating', (configInfo) => {
