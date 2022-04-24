@@ -18,33 +18,36 @@ export function App() {
         <Route path="/admin">
           <Admin/>
         </Route>
-        <Route path="/testing1">
-          <AccessAssessment assessment="testing1"/>
-        </Route>
-        <Route path="/testing2">
-          <AccessAssessment assessment="testing2"/>
-        </Route>
-        {/* <Route path="/just-testing">
-          <TestingAndTraining assessment="testing"/>
-        </Route> */}
         <Route path="/training">
-          <AccessAssessment assessment="training"/>
+          <AccessAssessment assessment="training" guided={true}/>
         </Route>
-        {/* <Route path="/just-training">
-          <TestingAndTraining assessment="training"/>
-        </Route>  */}
+        <Route path="/training-solo">
+          <AccessAssessment assessment="training" guided={false}/>
+        </Route> 
+        <Route path="/testing1">
+          <AccessAssessment assessment="testing1" guided={true}/>
+        </Route>
+        <Route path="/testing1-solo">
+          <AccessAssessment assessment="testing1" guided={false}/>
+        </Route> 
+        <Route path="/testing2">
+          <AccessAssessment assessment="testing2" guided={true}/>
+        </Route>
+        <Route path="/testing2-solo">
+          <AccessAssessment assessment="testing2" guided={false}/>
+        </Route> 
         <Route path="/rating">
-          <AccessAssessment assessment="rating"/>
+          <AccessAssessment assessment="rating" guided={true}/>
         </Route>
-        {/* <Route path="/just-rating">
-          <Rating assessment="rating"/>
-        </Route> */}
-        <Route path="/alternate-choice">
-          <AccessAssessment assessment="2AFC"/>
+        <Route path="/rating-solo">
+          <AccessAssessment assessment="rating-solo" guided={false}/>
         </Route>
-        {/* <Route path="/just-alternate-choice">
-          <AlternateChoices assessment="2AFC"/>
-        </Route> */}
+        <Route path="/alternative-choice">
+          <AccessAssessment assessment="2AFC" guided={true}/>
+        </Route>
+        <Route path="/alternative-choice-solo">
+          <AccessAssessment assessment="2AFC" guided={false}/>
+        </Route>
         <Route path="/login">
           <LoginPage/>
         </Route>

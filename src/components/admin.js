@@ -14,26 +14,37 @@ import tableStyles from "./Table/Table.module.css";
 // Group 2. 2/3 are signal present, 1/3 are signal absent
 // No images from training should be reused
 
-// async function displayResults (url) {
-//     const serveHTML = await fetch("/scripts/serve-html")
+async function displayResults (url) {
+    const serveHTML = await fetch("/scripts/serve-html")
 
-//     const newWindow = window.open(url, '_blank', 'noopener,noreferrer')
-//     if (newWindow) newWindow.opener = null
-// }
+    const newWindow = window.open(url, '_blank', 'noopener,noreferrer')
+    if (newWindow) newWindow.opener = null
+}
 
 class Admin extends Component {
     constructor() {
         super();
 
         this.state = {
+            // Assessments unlocked
+            trainingUnlocked: false,
+            testing1Unlocked: false,
+            testing2Unlocked: false,
+            ratingUnlocked: false,
+            AFCUnlocked: false,
+
+            // Number of students in each section
             numTrainingStudents: 0,
             numTestingStudents1: 0,
             numTestingStudents2: 0,
             numRatingStudents: 0,
             num2AFCStudents: 0,
+
+            // Assessment config info
             timeLimit: 0,
             secondsVisible: 0,
             numImages: 0,
+
             isDisabled: true
         }
 
@@ -84,38 +95,26 @@ class Admin extends Component {
         })
     }
 
-    unlockTraining(e) {
-        this.socket.emit('unlock training', {
-            timeLimit: this.state.timeLimit,
-            secondsVisible: this.state.secondsVisible,
-            numImages: this.state.numImages
+    unlockAssessment(assessment) {
+        this.setState({
+            [assessment.replace('2', '') + "Unlocked"]: true
+        }, () => {
+            console.log(this.state[assessment.replace('2', '') + "Unlocked"])
         })
-        alert('Training Unlocked')
-    }
 
-    unlockTesting(assessment) {
-        this.socket.emit(`unlock ${assessment}`, {
-            timeLimit: this.state.timeLimit,
-            secondsVisible: this.state.secondsVisible,
-            numImages: this.state.numImages
-        })
-        alert('Testing Unlocked')
-    }
+        if(assessment !== '2AFC') {
+            this.socket.emit(`unlock ${assessment}`, {
+                timeLimit: this.state.timeLimit,
+                secondsVisible: this.state.secondsVisible,
+                numImages: this.state.numImages
+            })
+        } else {
+            this.socket.emit('unlock 2AFC', {
+                numImages: this.state.numImages
+            })
+        }
 
-    unlockRating(e) {
-        this.socket.emit('unlock rating', {
-            timeLimit: this.state.timeLimit,
-            secondsVisible: this.state.secondsVisible,
-            numImages: this.state.numImages
-        })
-        alert('Rating Unlocked')
-    }
-
-    unlock2AFC(e) {
-        this.socket.emit('unlock 2AFC', {
-            numImages: this.state.numImages
-        })
-        alert('2AFC Unlocked')
+        alert(assessment.charAt(0).toUpperCase() + assessment.slice(1) + " Unlocked")
     }
 
     configTests(e) {
@@ -148,7 +147,24 @@ class Admin extends Component {
 
         this.socket.on('new user', (user) => {
             if (user) {
+                let assessment = user.current_test
+
                 this.addRow(user, users)
+
+                // If admin has set tests to unlocked, then allow incoming users to access test right away
+                if(this.state[assessment.replace('2', '') + "Unlocked"] === true) {
+                    if(assessment !== '2AFC') {
+                        this.socket.emit(`unlock ${assessment}`, {
+                            timeLimit: this.state.timeLimit,
+                            secondsVisible: this.state.secondsVisible,
+                            numImages: this.state.numImages
+                        })
+                    } else {
+                        this.socket.emit('unlock 2AFC', {
+                            numImages: this.state.numImages
+                        })
+                    }
+                }
             } else {
                 console.log("Socket sent blank data in new user")
             }
@@ -187,7 +203,7 @@ class Admin extends Component {
                 <fieldset id="config-tests">
                     <legend>Configure Assessments</legend>
 
-                    <form onSubmit={this.configTests.bind(this)} id="">
+                    <form onSubmit={this.configTests.bind(this)}>
                         <label htmlFor="timeLimit">Enter a time limit for each question: {' '}
                             <input
                                 type="number"
@@ -235,7 +251,7 @@ class Admin extends Component {
 
                     <button
                         className="unlockButton"
-                        onClick={this.unlockTraining.bind(this)}
+                        onClick={() => this.unlockAssessment("training")}
                         disabled={this.state.isDisabled}>
                         Unlock Training</button>
                     <span> Students in training section: {this.state.numTrainingStudents}</span>
@@ -243,7 +259,7 @@ class Admin extends Component {
 
                     <button
                         className="unlockButton"
-                        onClick={() => this.unlockTesting("testing1")}
+                        onClick={() => this.unlockAssessment("testing1")}
                         disabled={this.state.isDisabled}>
                         Unlock Testing 1</button>
                     <span> Students in testing 1 section: {this.state.numTestingStudents1}</span>
@@ -251,7 +267,7 @@ class Admin extends Component {
 
                     <button
                         className="unlockButton"
-                        onClick={() => this.unlockTesting("testing2")}
+                        onClick={() => this.unlockAssessment("testing2")}
                         disabled={this.state.isDisabled}>
                         Unlock Testing 2</button>
                     <span> Students in testing 2 section: {this.state.numTestingStudents2}</span>
@@ -259,7 +275,7 @@ class Admin extends Component {
 
                     <button
                         className="unlockButton"
-                        onClick={this.unlockRating.bind(this)}
+                        onClick={() => this.unlockAssessment("rating")}
                         disabled={this.state.isDisabled}>
                         Unlock Rating</button>
                     <span> Students in rating section: {this.state.numRatingStudents}</span>
@@ -267,7 +283,8 @@ class Admin extends Component {
 
                     <button
                         className="unlockButton"
-                        onClick={this.unlock2AFC.bind(this)}>
+                        onClick={() => this.unlockAssessment("2AFC")}
+                        disabled={this.state.isDisabled}>
                         Unlock 2AFC</button>
                     <span> Students in 2AFC section: {this.state.num2AFCStudents}</span>
                     <br />
@@ -275,11 +292,11 @@ class Admin extends Component {
 
                 <br />
 
-                {/* <fieldset id="get-results">
+                <fieldset id="get-results">
                     <legend>Get Results</legend>
 
                     <button onClick={() => displayResults('/test-display')}>Serve HTML</button>
-                </fieldset> */}
+                </fieldset>
 
                 <Table />
             </div >

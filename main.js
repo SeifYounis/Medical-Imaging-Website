@@ -34,8 +34,8 @@ app.post('/add-selection', (req, res) => {
      * Create new entry in 'results' table in database
      * Answer_date is of type 'timestamp with time zone' in PostgreSQL.
      */
-    pool.query("INSERT INTO results(session_id, student_id, username, assessment, prompt_image, answer, solution, answer_date) \
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)", [
+    pool.query("INSERT INTO results(session_id, student_id, username, assessment, prompt_image, answer, solution, answer_date, guided) \
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)", [
         req.sessionID,
         req.session.student_id,
         req.session.username,
@@ -44,6 +44,7 @@ app.post('/add-selection', (req, res) => {
         req.body.answer,
         req.body.solution,
         req.body.answerDate,
+        req.body.guided
     ], (err, result) => {
         if (err) throw err;
 

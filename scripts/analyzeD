@@ -978,7 +978,3 @@ if True:
 
 with open('./static/test.html', "w", encoding="utf-8") as o:
 	o.write(scriptoutput)
-
-# with open("output.html", "w", encoding="utf-8") as o:
-#     o.write(scriptoutput)
-# sys.stdout.write(scriptoutput)

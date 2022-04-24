@@ -27,7 +27,7 @@ const getSecret = (consumerKey, callback) => {
 
 /**
  *  Check that app was configured correctly, process launch parameters and display page corresponding with certain info in request params
- */ 
+ */
 exports.handleLaunch = (req, res, next) => {
   if (!req.body) {
     let err = new Error('Expected a body');
@@ -68,46 +68,52 @@ exports.handleLaunch = (req, res, next) => {
         //   sameSite: 'none', // This property is absolutely necessary to ensure launch URL can save these params in a cookie
         // });
 
-        // req.session.regenerate(err => {
-          // if (err) next(err);
+        // Check if app was launched by an instructor
+        if (provider.body.roles[0] === 'Instructor') {
+          return res.redirect('/admin')
+        }
 
-          // Check if app was launched by an instructor
-          if (provider.body.roles[0] === 'Instructor') {
-            return res.redirect('/admin')
+        // Check if app was launched as an assignment by a student
+        if (provider.outcome_service) {
+          req.session.canvas_lti_launch_params = provider.body;
+          req.session.student_id = provider.body.user_id
+
+          let route = "";
+
+          if (provider.body.custom_canvas_assignment_title.includes("Reader Study Login")) {
+            route += '/login'
+          }
+
+          if (provider.body.custom_canvas_assignment_title.includes("Testing Part 1")) {
+            route += '/testing1';
+          }
+
+          if (provider.body.custom_canvas_assignment_title.includes("Testing Part 2")) {
+            route += '/testing2';
+          }
+
+          if (provider.body.custom_canvas_assignment_title.includes("Training")) {
+            route += '/training';
+          }
+
+          if (provider.body.custom_canvas_assignment_title.includes("Rating")) {
+            route += '/rating';
+          }
+
+          if (provider.body.custom_canvas_assignment_title.includes("Two Alternative Forced Choice")) {
+            route += '/alternative-choice';
+          }
+
+          // If user is taking self-study version of course, load self-study version of these assessments
+          if (provider.body.context_title.includes('Self Study')) {
+            route += '-solo'
           }
           
-          // Check if app was launched as an assignment by a student
-          if (provider.outcome_service) {
-            req.session.canvas_lti_launch_params = provider.body;
-            req.session.student_id = provider.body.user_id
+          return res.redirect(route)
+        }
 
-            if(provider.body.custom_canvas_assignment_title.includes("Reader Study Login")) {
-              return res.redirect('/login')
-            }
+        return res.send(`It looks like this LTI wasn't launched as an assignment`);
 
-            if(provider.body.custom_canvas_assignment_title.includes("Testing Part 1")) {
-              return res.redirect('/testing1');
-            }
-
-            if(provider.body.custom_canvas_assignment_title.includes("Testing Part 2")) {
-              return res.redirect('/testing2');
-            }
-
-            if(provider.body.custom_canvas_assignment_title.includes("Training")) {
-              return res.redirect('/training');
-            }
-
-            if(provider.body.custom_canvas_assignment_title.includes("Rating")) {
-              return res.redirect('/rating');
-            }
-
-            if(provider.body.custom_canvas_assignment_title.includes("Two Alternative Forced Choice")) {
-              return res.redirect('/alternate-choice');
-            }
-          }
-
-          return res.send(`It looks like this LTI wasn't launched as an assignment`);
-        
       } else {
         return next(err);
       }
@@ -115,15 +121,16 @@ exports.handleLaunch = (req, res, next) => {
   });
 };
 
+// Post grade to student's gradebook
 exports.postGrade = (req, res, next) => {
   const provider = new lti.Provider(process.env.CONSUMER_KEY, process.env.CONSUMER_SECRET, nonceStore, lti.HMAC_SHA1);
-  
+
   provider.valid_request(req, req.session.canvas_lti_launch_params, (_err, _isValid) => {
     let score = parseFloat(req.body.score);
 
     provider.outcome_service.send_replace_result(score, (_err, _result) => {
-        console.log("Graded")
-        return res.status(200).send("Grade successfully posted")
+      console.log("Graded")
+      return res.status(200).send("Grade successfully posted")
     })
   });
 

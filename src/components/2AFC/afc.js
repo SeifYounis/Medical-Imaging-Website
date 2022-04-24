@@ -18,7 +18,7 @@ function configureImages(numImages) {
     absentImages = absentImages.slice(0, numImages)
 }
 
-class AlternateChoices extends Component {
+class AlternativeForcedChoice extends Component {
     constructor() {
         super();
 
@@ -107,9 +107,9 @@ class AlternateChoices extends Component {
                 })
             }
 
-            console.log("Prompt image is " + this.state.promptImage)
-            console.log("Solution is " + this.state.solution)
-            console.log("Answer is " + selectedSide)
+            // console.log("Prompt image is " + this.state.promptImage)
+            // console.log("Solution is " + this.state.solution)
+            // console.log("Answer is " + selectedSide)
 
             fetch('/add-selection', {
                 method: 'POST',
@@ -118,7 +118,8 @@ class AlternateChoices extends Component {
                     promptImage: this.state.promptImage,
                     answer: selectedSide,
                     answerDate: new Date().toLocaleString(),
-                    solution: this.state.solution
+                    solution: this.state.solution,
+                    guided: this.props.guided
                 }),
                 headers: {
                     'content-Type': 'application/json'
@@ -247,4 +248,4 @@ class AlternateChoices extends Component {
     }
 }
 
-export default AlternateChoices;
+export default AlternativeForcedChoice;

@@ -147,7 +147,8 @@ class TestingAndTraining extends Component {
                     promptImage: this.state.promptImage,
                     answer: selectedAnswer,
                     answerDate: new Date().toLocaleString(),
-                    solution: this.state.solution
+                    solution: this.state.solution,
+                    guided: this.props.guided
                 }),
                 headers: {
                     'content-Type': 'application/json'
