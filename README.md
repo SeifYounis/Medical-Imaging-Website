@@ -3,6 +3,7 @@
 ## Table of Contents
 1. [Reader Study Overview](./docs/overview.md)
 2. [Web Application](./docs/webapp.md/#web-application)
+3. [Canvas Instructure](./docs/canvas.md)
 
 <!-- 3. [Learning Management System]()
     - [Learning Tools Interoperability (LTI)]()

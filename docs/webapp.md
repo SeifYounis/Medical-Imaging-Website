@@ -83,6 +83,7 @@ If you want to be able to more directly view and edit the contents of this datab
 Follow pgAdmin's setup instructions, which will include setting up a password to access the database servers you connect to with pgAdmin. Be sure to store this passowrd somewhere so you can reference it later as needed. 
 
 When you open the app, click on the Dashboard and click on "Add A New Server." Give this server a name and switch to the Connection tab. Here, you will need to configure this server to connect to the Heroku PostgreSQL database. This is where the DATABASE_URL environment variable comes in handy. Database URLs take the following format 
+
 `postgres://<username>:<password>@<host>:<port>/<database_name>.`
 
 Use this information to fill in the relevant information in the Connection tab. Then, navigate to the SSL tab and set SSL mode to "Require." Finally, switch to the Advanced tab and fill in the database name where it says "DB restriction." This ensures that you only have access to the database this app uses, and not any of the other databases that exist at that URL.
