@@ -1,6 +1,9 @@
 {
   "name": "reader_study",
   "version": "0.1.0",
+  "engines": {
+    "node": "16.x"
+  },
   "private": "true",
   "description": "Web application of medical imaging reader study",
   "author": {
