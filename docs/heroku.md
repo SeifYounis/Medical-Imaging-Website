@@ -10,7 +10,7 @@ The working implementation of this app is hosted on [Heroku](https://www.heroku.
 First, sign up for a free account [here](https://id.heroku.com/login). Afterwards, you should be redirected to your dashboard, where you can click "Create New App." Once you've set up your app, click on "Configure Add-ons" in the Overview tab on your dashboard. Attach a Heroku Postgres Database to your app. 
 
 ### Configuration
-Navigate to the Settings tab on your dashboard. Scroll down to Buildpacks and click "Add buildpack." Add Python followed by Node.js for your buildpack. **You must do so in that order**. This is because you first install the Python scripts' necessary dependencies, then Node.js's necessary dependencies. The server is activated with Node.js, which is why it must be listed as the last buildpack.
+Navigate to the Settings tab on your dashboard. Scroll down to Buildpacks and click "Add buildpack." Add Python followed by Node.js for your buildpack. **You must do so in that order**. This is because you first install the Python scripts' necessary dependencies, then Node.js's necessary dependencies. The server is then activated with Node.js, which is why it must be listed as the last buildpack.
 
 #### Environment Variables
 The reader study relies on environment variables for its core functionality, including database queries and integration with [Canvas](#./docs/canvas.md). As such, you'll need to ensure your Heroku app has the necessary environment configurations. 
@@ -34,7 +34,7 @@ CONSUMER_KEY: ``<consumer key>``
 CONSUMER_SECRET: ``<consumer secret>``
 SESSION_SECRET = ``<session secret>``
 
-The session secret can be anything. You likewise may choose any value as your consumer key and secret, but they must match the values you enter in your Canvas external app configuration. For more information on setting consumer key and secret, check [here](./canvas.md#setup-instructions). 
+The session secret can be anything. You likewise may choose any value as your consumer key and secret, but they must match the values you enter in your Canvas external app configuration. For more information on setting consumer key and secret in Canvas, check [here](./canvas.md#course-configuration). 
 
 ### Deployment
 Once you have finished configuring your app, navigate to the Deploy tab on your dashboard and follow the instructions to host the app on a Heroku server.
