@@ -1,3 +1,7 @@
+/**
+ * Code for tracking user sessions
+ */
+
 // Query I used to make session database table
 // CREATE TABLE IF NOT EXISTS myschema.session (
 //   sid varchar NOT NULL COLLATE "default",
@@ -22,7 +26,7 @@ function initializeSession() {
         sess = session({
             secret: process.env.SESSION_SECRET,
             saveUninitialized: false,
-            resave: true,
+            resave: false,
             store: new PostgreSQLStore({
                 conString: process.env.DATABASE_URL,
                 pool: pool,

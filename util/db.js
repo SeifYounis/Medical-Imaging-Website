@@ -1,3 +1,7 @@
+/**
+ * Code for connecting to PostgreSQL database
+ */
+
 const { Pool } = require('pg')
 let pool;
 

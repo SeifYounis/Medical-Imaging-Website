@@ -1,3 +1,7 @@
+/**
+ * Retrieve all users that have opened an assessment
+ */
+
 const express = require('express')
 const router = express.Router()
 

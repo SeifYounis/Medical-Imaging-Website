@@ -7,6 +7,14 @@
  * 
  */
 
+/**
+ * Assessments are accessed via Canvas assignments. These assignments
+ * have a launch URL that must be redirected to the appropriate assessment URL.
+ * This code acts as middleware for that launch route. The request sent to 
+ * the launch URL contains important information about the assigment and the
+ * student accessing it. With this info, we can configure the assessment
+ * to be opened, track students, and post grades.
+ */
 const lti = require('ims-lti');
 
 const nonceStore = new lti.Stores.MemoryStore();
@@ -57,10 +65,6 @@ exports.handleLaunch = (req, res, next) => {
       }
 
       if (isValid) {
-        /**
-         * Use cookies to save special request parameters sent by the launch URL. 
-         * The information from these parameters can enable grade passback
-         */
         // res.cookie("canvas_lti_launch_params", provider.body, {
         //   maxAge: 1000 * 60 * 60 * 6, // Cookie lasts 6 hours, after which time the assignment must be relaunched
         //   secure: false,
@@ -75,9 +79,13 @@ exports.handleLaunch = (req, res, next) => {
 
         // Check if app was launched as an assignment by a student
         if (provider.outcome_service) {
+
+          // Save Canvas launch parameters to session so grades can be set later, as
+          // well as student ID
           req.session.canvas_lti_launch_params = provider.body;
           req.session.student_id = provider.body.user_id
 
+          // Determine appropriate assessment to launch by matching assessment name to assignment title
           let route = "";
 
           if (provider.body.custom_canvas_assignment_title.includes("Reader Study Login")) {
@@ -104,8 +112,8 @@ exports.handleLaunch = (req, res, next) => {
             route += '/alternative-choice';
           }
 
-          // If user is taking self-study version of course, load self-study version of these assessments
-          if (provider.body.context_title.includes('Self Study')) {
+          // If name of course user is taking includes the words "Self Study", load self-study version of these assessments
+          if (provider.body.context_title.includes('Self Study') && !route.includes('login')) {
             route += '-solo'
           }
           
@@ -133,6 +141,4 @@ exports.postGrade = (req, res, next) => {
       return res.status(200).send("Grade successfully posted")
     })
   });
-
-  // console.log(req.cookies.canvas_lti_launch_params);
 }

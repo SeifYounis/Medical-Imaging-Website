@@ -1,32 +1,25 @@
+/**
+ * Code for rendering Rating assessment.
+ * 
+ * NOTE: An important distinction
+ * Rating at 0 and question timed out: no activity
+ * Rating at 0 and confirmed: intentional answer
+ */
+
 import { Component } from 'react'
 
-import { fadeOutAndfadeIn } from '../../assets/fadingAnimation'
-// import {
-//     presentImages,
-//     absentImages
-// } from '../../assets/loadImages'
-import { Timer } from '../Timer/timer';
-
 import './rating.css'
+import { fadeOutAndfadeIn } from '../../assets/fadingAnimation'
+import { Timer } from '../Timer/timer';
+import { loadImages } from '../../assets/loadImages';
+import Results from '../results';
+
 import Slider from 'rc-slider';
 import 'rc-slider/assets/index.css';
-import { loadImages } from '../../assets/loadImages';
 
 let timer = new Timer();
 let {presentImages, absentImages} = loadImages()
 
-// Left rating at 0 and it timed out: no activity
-// Rating at 0 and confirmed/everything else: intentional answer
-
-// Every selection contains the following information
-
-// Name of user, session id
-// Timestamp for when an answer is selected
-// Rating user gave
-// Name of the image with unique identifier
-// Type of image
-
-// Fade in new image without fading out old image if it disappears
 
 function configureImages(numImages) {
     presentImages = presentImages.slice(0, numImages/2)
@@ -44,11 +37,9 @@ class Rating extends Component {
             promptImage: null,
             solution: null,
             testOver: false,
+            results: null,
         }
     }
-
-    // HOST = window.location.origin.replace(/^http/, 'ws')
-    // ws = new WebSocket(this.HOST);
 
     // Load new image
     newImage() {
@@ -58,9 +49,12 @@ class Rating extends Component {
             return Math.round(num);
         };
 
-        var condition;
-        var image
+        let condition;
+        let image
+        let solution
 
+        // If assessment is over, don't load new image.
+        // Otherwise, randomly pick either a present or absent image as available
         if (!absentImages.length && !presentImages.length) {
             clearInterval(timer.timerInterval);
             return document.getElementById("medical-scan").src;
@@ -73,18 +67,18 @@ class Rating extends Component {
         }
 
         if (condition === 0) {
-            this.setState({
-                solution: "No signal"
-            })
+            solution = "No signal"
 
             let index = random(0, absentImages.length - 1);
             image = absentImages[index].default
 
             absentImages.splice(index, 1);
         } else {
-            this.setState({
-                solution: "Signal present"
-            })
+            // this.setState({
+            //     solution: "Signal present"
+            // })
+
+            solution = "Signal present"
 
             let index = random(0, presentImages.length - 1);
             image = presentImages[index].default
@@ -93,18 +87,19 @@ class Rating extends Component {
         }
 
         this.setState({
-            promptImage: image
+            promptImage: image,
+            solution: solution
         })
 
         return image
     }
 
+    // Process user response
     processSelection(selectedValue) {
-        console.log(this.state.totalAnswered)
-
         clearInterval(timer.timerInterval);
 
         if (this.state.totalAnswered < this.props.configInfo.numImages) {
+            // Update assessment progress
             this.setState({
                 buttonDisabled: true,
                 totalAnswered: this.state.totalAnswered + 1,
@@ -116,6 +111,7 @@ class Rating extends Component {
 
             let date = new Date().toLocaleString();
 
+            // Add selection to database
             fetch('/add-selection', {
                 method: 'POST',
                 body: JSON.stringify({
@@ -140,14 +136,42 @@ class Rating extends Component {
 
                 timer.startTimer(this)
             } else {
+                // End test once all questions are answered. Post grade to Canvas.
+                // If self-study, fetch HTML code for displaying test results
                 setTimeout(() => {
-                    this.setState({ testOver: true })
+                    this.setState({ testOver: true }, () => {
+                        this.finishAssessment()
+                    })
                 }, 1500)
             }
         }
     }
 
+    // Post grade to Canvas.
+    // If self-study, fetch HTML code for displaying test results
+    async finishAssessment() {
+        await fetch('/lti/post-grade', {
+            method: 'POST',
+            body: JSON.stringify({ score: this.state.score }),
+            headers: {
+                'content-Type': 'application/json'
+            },
+        })
 
+        if (!this.props.guided) {
+            await fetch('/scripts/display-results', {
+                method: 'POST',
+                body: JSON.stringify({ assessment: this.props.assessment }),
+                headers: {
+                    'content-Type': 'application/json'
+                },
+            })
+                .then(response => response.text())
+                .then(rawHTML => this.setState({ results: rawHTML }))
+        }
+    }
+
+    // Handle rating value change.
     handleOnChange = (value) => {
         let image = document.getElementById('medical-scan')
 
@@ -160,6 +184,7 @@ class Rating extends Component {
         })
     }
 
+    // Begin assessment once page has loaded
     componentDidMount() {
         configureImages(this.props.configInfo.numImages)
 
@@ -171,14 +196,22 @@ class Rating extends Component {
     }
 
     render() {
+        // Display completion message once assessment is over. If self-study, display user results
         if (this.state.testOver) {
-            fetch('/lti/post-grade', {
-                method: 'POST',
-                body: JSON.stringify({ score: 1 }),
-                headers: {
-                    'content-Type': 'application/json'
-                },
-            })
+            if (!this.props.guided) {
+
+                // If results are ready to be displayed, render HTML page. Otherwise, display loading
+                // animation until results are retrieved
+                if (this.state.results) {
+                    return Results(this.state.results)
+                }
+                
+                return (
+                    <div id="loader-wrapper">
+                        <div id="loader"></div>
+                    </div>
+                )
+            }
 
             return (
                 <p>You have completed the <b>{this.props.assessment}</b> assessment. You may now close this tab</p>

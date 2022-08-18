@@ -1,3 +1,11 @@
+/**
+ * Code for implementing Socket.io to enable real time tracking of user 
+ * connections
+ * 
+ * Primary reference for capturing session data through web sockets
+ * https://github.com/websockets/ws/blob/master/examples/express-session-parse/index.js
+ */
+
 const pool = require('./util/db')
 const sess = require('./util/session')
 
@@ -6,6 +14,7 @@ module.exports = (io) => {
         sess(socket.request, socket.request.res || {}, next);
     });
     
+    // Handle new web socket connection
     io.on('connection', (socket) => {
         socket.on('connect-admin', () => {
             socket.join('admin')
@@ -53,17 +62,19 @@ module.exports = (io) => {
             })
         })
     
+        // Upon receiving unlock request, emit unlock event to all connected student sockets and
+        // attach event info
         socket.on('unlock training', (configInfo) => {
             io.to('trainingA').emit('unlock training', configInfo, "A")
             io.to('trainingB').emit('unlock training', configInfo, "B")
         })
     
         socket.on('unlock testing1', (configInfo) => {
-            io.to("testing1").emit('unlock testing', configInfo)
+            io.to("testing1").emit('unlock testing1', configInfo)
         })
     
         socket.on('unlock testing2', (configInfo) => {
-            io.to("testing2").emit('unlock testing', configInfo)
+            io.to("testing2").emit('unlock testing2', configInfo)
         })
     
         socket.on('unlock rating', (configInfo) => {
@@ -74,6 +85,7 @@ module.exports = (io) => {
             io.to('2AFC').emit('unlock 2AFC', configInfo)
         })
     
+        // Remove disconnected user from database
         socket.on('disconnecting', () => {
             let [, room] = socket.rooms
             console.log(`Disconnected. Socket has left ${room}`)
@@ -92,49 +104,3 @@ module.exports = (io) => {
         })
     });
 }
-
-/**
- * Primary reference for capturing session data through web sockets
- * https://github.com/websockets/ws/blob/master/examples/express-session-parse/index.js
- */
-// const { Server } = require('ws');
-// const wss = new Server({ noServer: true })
-
-// server.on('upgrade', function (request, socket, head) {
-//   // console.log('Parsing session from request...');
-
-//   sess(request, {}, () => {
-//     if (!request.sessionID) {
-//       socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
-//       socket.destroy();
-//       return;
-//     }
-
-//     // console.log('Session is parsed!');
-
-//     wss.handleUpgrade(request, socket, head, function (ws) {
-//       wss.emit('connection', ws, request);
-//     });
-//   });
-// });
-
-// wss.on('connection', (ws, req) => {
-//   console.log('Connected')
-
-//   ws.on('close', () => {
-//     console.log('Connection closed.')
-
-//     pool.query("UPDATE active_connections SET active=$1 WHERE session_id=$2", [
-//       false,
-//       req.sessionID
-//     ], (err, result) => {
-//       if (err) throw err;
-//     })
-//   });
-// });
-
-// setInterval(() => {
-//   wss.clients.forEach((client) => {
-//     client.send(new Date().toTimeString());
-//   });
-// }, 1000);

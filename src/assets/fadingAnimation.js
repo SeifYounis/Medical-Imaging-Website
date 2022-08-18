@@ -20,7 +20,7 @@ export function fadeOutAndfadeIn(image, newImage){
 		if(opacity < 0.1){
 			clearInterval(fadeOutTimer);
 
-            //swap the image, and fadeIn, which is the same as above function
+            //swap the image and fade in new image
 			image.src = newImage;
 			fadeIn(image);
 		}

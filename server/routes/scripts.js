@@ -1,23 +1,27 @@
+/**
+ * Route handler for running Python script to retrieve results from database
+ * and generate HTML results display
+ */
+
 const express = require('express')
 const router = express.Router()
 const { spawn } = require('child_process');
 
-const path = require('path')
-
-router.get('/serve-html', (req, res) => {
+router.post('/display-results', (req, res) => {
     let dataToSend;
+
+    let sessionID = req.sessionID;
+    let studentid = req.session.student_id;
+    let username = req.session.username;
+    let assessment = req.body.assessment;
+
+    // const py = spawn('python', ['./scripts/analyzeD.py', "Self-guided", "testing1",  "kne006", "628fa959fbd2a85a0d11892acddde75a5a40eab5", 
+    // "4RTf1KIMBUypnHxqC1vM9DTFwDCfLKA5"])
+
     // spawn new child process to call the python script
-    // const py = spawn('python', ['./scripts/serve_html.py']);
+    const py = spawn('python', ['./scripts/analyzeD.py', "Self-guided", assessment,  username, studentid, sessionID])
 
-    const py = spawn('python', ['./scripts/analyzeD', 'frank', 'testing'])
-
-    // py.stdin.write(JSON.stringify({username: "seif"}));
-
-    // py.stdin.end();
-
-    // collect data from script
     py.stdout.on('data', function (data) {
-        console.log('Pipe data from python script ...');
         dataToSend = data.toString();
     });
 
@@ -25,19 +29,9 @@ router.get('/serve-html', (req, res) => {
     py.on('close', (code) => {
         console.log(`child process close all stdio with code ${code}`);
         
-        // console.log(dataToSend)
-
         // send data to browser
         res.send(dataToSend)
-
-        // res.redirect('/test-display')
     });
-
-    // py.on('exit', () => {
-    //     console.log("Python process exited")
-
-    //     res.redirect('/test-display')
-    // })
 })
 
 module.exports = router

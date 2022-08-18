@@ -1,53 +1,35 @@
+/**
+ * Code for rendering Testing and Training assessments
+ */
+
 import { Component } from 'react'
 
 import './testing.css'
 import { fadeOutAndfadeIn } from '../../assets/fadingAnimation'
-// import {
-//     presentImages,
-//     absentImages,
-//     presentAnswerImages
-// } from '../../assets/loadImages'
 import { Timer } from '../Timer/timer';
 import { loadImages, loadTrainingImages } from '../../assets/loadImages';
+import Results from '../results'
 
 let presentImages, absentImages, presentAnswerImages
-let timer = new Timer();
+let timer = new Timer()
 
-// Every selection contains the following information
-
-// Name of user, user id
-// Timestamp for when an answer is selected
-// Answer user gave
-// Name of the image with unique identifier
-// Type of image
-
-// Testing 1 and testing 2
-// Separate images folder for training
-
+// Load images according to assessment details
 function configureImages(numImages, group) {
-    let numPresentImages;
-    let numAbsentImages;
-    let numPresentAnswerImages;
-
     let images;
 
-    if(group === null) {  // If no group, we are on the testing assessment
+    if (group === null) {  // If no group, we are on the testing assessment
         images = loadImages()
 
-        console.log(images.presentImages)
-        console.log(images.absentImages)
-
-        presentImages = images.presentImages.slice(0, numImages/2)
-        absentImages = images.absentImages.slice(0, numImages/2)
-        presentAnswerImages = images.presentAnswerImages.slice(0, numImages/2)
+        presentImages = images.presentImages.slice(0, numImages / 2)
+        absentImages = images.absentImages.slice(0, numImages / 2)
+        presentAnswerImages = images.presentAnswerImages.slice(0, numImages / 2)
 
     } else { // Otherwise, we are on training
-        images = loadTrainingImages()
+        let numPresentImages, numAbsentImages, numPresentAnswerImages;
 
-        console.log(images.absentTrainingImages)
-        console.log(images.presentAnswerImages)
-        console.log(images.presentTrainingImages)
-        
+        images = loadTrainingImages() // These images are used exclusively in training phase
+
+        // User's group assigment influences distribution of type of images shown
         if (group === 'A') {
             numPresentImages = Math.ceil(2 * numImages / 3)
         } else if (group === 'B') {
@@ -56,7 +38,7 @@ function configureImages(numImages, group) {
 
         numPresentAnswerImages = numPresentImages
         numAbsentImages = numImages - numPresentImages
-    
+
         presentImages = images.presentTrainingImages.slice(0, numPresentImages)
         presentAnswerImages = images.presentAnswerImages.slice(0, numPresentAnswerImages)
         absentImages = images.absentTrainingImages.slice(0, numAbsentImages)
@@ -75,7 +57,8 @@ class TestingAndTraining extends Component {
             correct: 0,
             totalAnswered: 0,
             score: 0,
-            testOver: false
+            testOver: false,
+            results: null,
         }
     }
 
@@ -88,8 +71,11 @@ class TestingAndTraining extends Component {
         };
 
         let condition;
-        let image;
 
+        let image, solution;
+
+        // If assessment is over, don't load new image.
+        // Otherwise, randomly pick either a present or absent image as available
         if (!absentImages.length && !presentImages.length) {
             clearInterval(timer.timerInterval);
             return document.getElementById("medical-scan").src;
@@ -102,18 +88,18 @@ class TestingAndTraining extends Component {
         }
 
         if (condition === 0) {
-            this.setState({
-                solution: "No signal"
-            })
+            solution = "No signal"
 
             let index = random(0, absentImages.length - 1);
             image = absentImages[index].default
 
             absentImages.splice(index, 1);
         } else {
-            this.setState({
-                solution: "Signal present"
-            })
+            // this.setState({
+            //     solution: "Signal present"
+            // })
+
+            solution = "Signal present"
 
             let index = random(0, presentImages.length - 1);
             image = presentImages[index].default
@@ -128,9 +114,10 @@ class TestingAndTraining extends Component {
         }
 
         this.setState({
-            promptImage: image
+            promptImage: image,
+            solution: solution
         })
-        
+
         return image
     }
 
@@ -166,27 +153,36 @@ class TestingAndTraining extends Component {
             let image = document.getElementById("medical-scan");
             image.style.visibility = 'visible';
 
+            let score;
+            let correct;
+
             if (selectedAnswer === this.state.solution) {
                 resultContainer = document.getElementById('correct')
 
-                this.setState({
-                    score: (this.state.correct + 1) / (this.state.totalAnswered + 1),
-                    correct: this.state.correct + 1
-                })
+                score = (this.state.correct + 1) / (this.state.totalAnswered + 1)
+                correct = this.state.correct + 1
+
+                // this.setState({
+                //     score: (this.state.correct + 1) / (this.state.totalAnswered + 1),
+                //     correct: this.state.correct + 1
+                // })
             } else {
                 resultContainer = document.getElementById('incorrect')
 
-                this.setState({
-                    score: this.state.correct / (this.state.totalAnswered + 1),
-                })
+                score = this.state.correct / (this.state.totalAnswered + 1)
+                correct = this.state.correct
             }
 
+            // Update assessment progress
             this.setState({
                 isDisabled: true,
                 totalAnswered: this.state.totalAnswered + 1,
+                correct: correct,
+                score: score
             });
 
-
+            // (Training only) Display if selection was correct/incorrect for a few seconds before 
+            // moving on to next image
             if (this.props.assessment === "training") {
                 resultContainer.style.display = "block";
                 document.getElementById('split-right').style.display = "none";
@@ -210,48 +206,70 @@ class TestingAndTraining extends Component {
                 /** 
                  * In the training interface, add a delay before transitioning to the next image so users have time to view feedback. 
                  * No such delay needed for the testing interface
-                 * */ 
-                if(this.props.assessment === 'training') {
-                    setTimeout(() => {    
+                 * */
+                if (this.props.assessment === 'training') {
+                    setTimeout(() => {
                         fadeOutAndfadeIn(image, this.newImage());
                         timer.startTimer(this);
                     }, 2000)
 
-                    setTimeout(() => {    
-                        this.setState({
-                            isDisabled: false
-                        });
+                    setTimeout(() => {
+                        this.setState({ isDisabled: false });
                     }, 4000);
 
-                } else if(this.props.assessment.includes('testing')) {
-                    console.log(image.style.visibility === 'hidden')
-
+                } else if (this.props.assessment.includes('testing')) {
                     fadeOutAndfadeIn(image, this.newImage());
-    
+
                     timer.startTimer(this);
 
                     setTimeout(() => {
-                        this.setState({
-                            isDisabled: false
-                        });
+                        this.setState({ isDisabled: false });
                     }, 2000)
                 }
 
 
             } else {
+                // End test once all questions are answered.
                 setTimeout(() => {
-                    this.setState({ testOver: true })
+                    this.setState({ testOver: true }, () => {
+                        this.finishAssessment()
+                    })
                 }, 1500)
             }
         }
     }
 
+    // Post grade to Canvas.
+    // If self-study, fetch HTML code for displaying test results
+    async finishAssessment() {
+        await fetch('/lti/post-grade', {
+            method: 'POST',
+            body: JSON.stringify({ score: this.state.score }),
+            headers: {
+                'content-Type': 'application/json'
+            },
+        })
+
+        if (!this.props.guided) {
+            await fetch('/scripts/display-results', {
+                method: 'POST',
+                body: JSON.stringify({ assessment: this.props.assessment }),
+                headers: {
+                    'content-Type': 'application/json'
+                },
+            })
+                .then(response => response.text())
+                .then(rawHTML => this.setState({ results: rawHTML }))
+        }
+    }
+
+    // Begin assessment once page has loaded
     componentDidMount() {
         configureImages(this.props.configInfo.numImages, this.props.group)
 
         // Display score only if on the training assessment
         let scoreboard = document.getElementById('scoreboard')
-        scoreboard.style.visibility = this.props.assessment === "training" ? "visible": "hidden"
+        scoreboard.style.visibility = this.props.assessment === "training" ? "visible" : "hidden"
 
         document.getElementById('medical-scan').src = this.newImage()
 
@@ -259,14 +277,22 @@ class TestingAndTraining extends Component {
     }
 
     render() {
+        // Display completion message once assessment is over. If self-study, display user results
         if (this.state.testOver) {
-            fetch('/lti/post-grade', {
-                method: 'POST',
-                body: JSON.stringify({ score: this.state.score }),
-                headers: {
-                    'content-Type': 'application/json'
-                },
-            })
+            if (!this.props.guided) {
+
+                // If results are ready to be displayed, render HTML page. Otherwise, display loading
+                // animation until results are retrieved
+                if (this.state.results) {
+                    return Results(this.state.results)
+                }
+                
+                return (
+                    <div id="loader-wrapper">
+                        <div id="loader"></div>
+                    </div>
+                )
+            }
 
             return (
                 <p>You have completed the <b>{this.props.assessment}</b> assessment. You may now close this tab</p>
@@ -302,7 +328,7 @@ class TestingAndTraining extends Component {
                                 }}>No
                             </button>
 
-                            <Timer configInfo={this.props.configInfo}/>
+                            <Timer configInfo={this.props.configInfo} />
                         </div>
 
                         <div className="bottom-right" id='scoreboard'>

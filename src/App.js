@@ -1,3 +1,7 @@
+/**
+ * Front end route handler for accessing login, admin, assessment pages, etc.
+ */
+
 import React from 'react';
 import {
   Switch,
@@ -7,9 +11,6 @@ import {
 import Admin from './components/admin';
 import LoginPage from './components/loginPage';
 import AccessAssessment from './components/accessAssessment';
-// import TestingAndTraining from './components/TestingAndTraining/TestingAndTraining';
-// import Rating from './components/Rating/rating';
-// import AlternateChoices from './components/2AFC/afc';
 
 export function App() {
   return(
@@ -40,7 +41,7 @@ export function App() {
           <AccessAssessment assessment="rating" guided={true}/>
         </Route>
         <Route path="/rating-solo">
-          <AccessAssessment assessment="rating-solo" guided={false}/>
+          <AccessAssessment assessment="rating" guided={false}/>
         </Route>
         <Route path="/alternative-choice">
           <AccessAssessment assessment="2AFC" guided={true}/>

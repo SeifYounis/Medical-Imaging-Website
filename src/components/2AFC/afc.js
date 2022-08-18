@@ -1,17 +1,17 @@
+/**
+ * Code for rendering Two Alternate Forced Choice assessment.
+ * 
+ * NOTE: In results table, signal absent image is prompt_image and signal present image is solution 
+ */
+
 import React, { Component } from 'react'
 
 import './afc.css'
 import { fadeOutAndfadeIn } from '../../assets/fadingAnimation'
 import { loadImages } from '../../assets/loadImages';
-// import {
-//     presentImages,
-//     absentImages
-// } from '../../assets/loadImages'
+import Results from '../results';
 
-let {presentImages, absentImages} = loadImages()
-
-// Signal absent image in prompt_image and signal present image in solution
-// Image selected will go into answer
+let { presentImages, absentImages } = loadImages()
 
 function configureImages(numImages) {
     presentImages = presentImages.slice(0, numImages)
@@ -33,6 +33,7 @@ class AlternativeForcedChoice extends Component {
             clickDisabled: false,
             keyDisabled: false,
             testOver: false,
+            results: null,
         }
     }
 
@@ -88,29 +89,37 @@ class AlternativeForcedChoice extends Component {
         return []
     }
 
+    // Process user response
     processSelection(selectedSide) {
         if (this.state.totalAnswered < this.props.configInfo.numImages) {
+            let score;
+            let correct;
+
+            if (selectedSide === this.state.solution) {
+                score = (this.state.correct + 1) / (this.state.totalAnswered + 1)
+                correct = this.state.correct + 1
+            } else {
+                // this.setState({
+                //     score: this.state.correct / (this.state.totalAnswered + 1),
+                // })
+
+                score = this.state.correct / (this.state.totalAnswered + 1)
+            }
+
+            // Update assessment progress
             this.setState({
                 clickDisabled: true,
                 keyDisabled: true,
                 totalAnswered: this.state.totalAnswered + 1,
+                correct: correct,
+                score: score
             });
-
-            if (selectedSide === this.state.solution) {
-                this.setState({
-                    score: (this.state.correct + 1) / (this.state.totalAnswered + 1),
-                    correct: this.state.correct + 1
-                })
-            } else {
-                this.setState({
-                    score: this.state.correct / (this.state.totalAnswered + 1),
-                })
-            }
 
             // console.log("Prompt image is " + this.state.promptImage)
             // console.log("Solution is " + this.state.solution)
             // console.log("Answer is " + selectedSide)
 
+            // Add selection to database
             fetch('/add-selection', {
                 method: 'POST',
                 body: JSON.stringify({
@@ -139,6 +148,7 @@ class AlternativeForcedChoice extends Component {
             // })
             // this.ws.send(wsData)
 
+            // Replace presented images with new pair if available
             if (nextPair.length) {
                 let currentLeft = document.getElementById("scan-left");
                 let currentRight = document.getElementById("scan-right");
@@ -152,11 +162,39 @@ class AlternativeForcedChoice extends Component {
                         keyDisabled: false
                     });
                 }, 2000);
-            } else {
+            } else { 
+                // // Otherwise, end test once all questions are answered. Post grade to Canvas.
+                // If self-study, fetch HTML code for displaying test results
                 setTimeout(() => {
-                    this.setState({ testOver: true })
+                    this.setState({ testOver: true }, () => {
+                        this.finishAssessment()
+                    })
                 }, 2500)
             }
+        }
+    }
+
+    // Post grade to Canvas.
+    // If self-study, fetch HTML code for displaying test results
+    async finishAssessment() {
+        await fetch('/lti/post-grade', {
+            method: 'POST',
+            body: JSON.stringify({ score: this.state.score }),
+            headers: {
+                'content-Type': 'application/json'
+            },
+        })
+
+        if (!this.props.guided) {
+            await fetch('/scripts/display-results', {
+                method: 'POST',
+                body: JSON.stringify({ assessment: this.props.assessment }),
+                headers: {
+                    'content-Type': 'application/json'
+                },
+            })
+                .then(response => response.text())
+                .then(rawHTML => this.setState({ results: rawHTML }))
         }
     }
 
@@ -188,13 +226,20 @@ class AlternativeForcedChoice extends Component {
     render() {
         // Display message once test is over
         if (this.state.testOver) {
-            fetch('/lti/post-grade', {
-                method: 'POST',
-                body: JSON.stringify({ score: this.state.score }),
-                headers: {
-                    'content-Type': 'application/json'
-                },
-            })
+            if (!this.props.guided) {
+
+                // If results are ready to be displayed, render HTML page. Otherwise, display loading
+                // animation until results are retrieved
+                if (this.state.results) {
+                    return Results(this.state.results)
+                }
+                
+                return (
+                    <div id="loader-wrapper">
+                        <div id="loader"></div>
+                    </div>
+                )
+            }
 
             return (
                 <p>You have completed the <b>{this.props.assessment}</b> assessment. You may now close this tab</p>

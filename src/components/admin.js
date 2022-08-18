@@ -4,23 +4,16 @@ import { io } from "socket.io-client";
 import Table from "./Table";
 import tableStyles from "./Table/Table.module.css";
 
-// To do:
-// Adjust timer
-// Adjust number of images and number of each type of image
-// Control when certain assessments are available
+// async function displayResults (url) {
+//     const serveHTML = await fetch("/scripts/serve-html")
 
-// Two groups of students
-// Group 1. 2/3 are signal absent, 1/3 are signal present
-// Group 2. 2/3 are signal present, 1/3 are signal absent
-// No images from training should be reused
+//     const newWindow = window.open(url, '_blank', 'noopener,noreferrer')
+//     if (newWindow) newWindow.opener = null
+// }
 
-async function displayResults (url) {
-    const serveHTML = await fetch("/scripts/serve-html")
-
-    const newWindow = window.open(url, '_blank', 'noopener,noreferrer')
-    if (newWindow) newWindow.opener = null
-}
-
+/**
+ * Instructor page to control assessment flow and adjust settings. Guided only.
+ */
 class Admin extends Component {
     constructor() {
         super();
@@ -55,7 +48,7 @@ class Admin extends Component {
     addRow = (data, users) => {
         let countToUpdate;
 
-        console.log(data.current_test)
+        // console.log(data.current_test)
 
         if (data.current_test === "testing1") {
             countToUpdate = "numTestingStudents1"
@@ -69,6 +62,7 @@ class Admin extends Component {
             countToUpdate = "num2AFCStudents"
         }
 
+        // Increment count and add student to table
         this.setState({ [countToUpdate]: this.state[countToUpdate] + 1 }, () => {
             let username, student_id, current_test, date_joined;
             let studentInfo = { student_id, username, current_test, date_joined }
@@ -95,11 +89,16 @@ class Admin extends Component {
         })
     }
 
+    // Emit event to unlock assessment to web socket server and pass in configuration
     unlockAssessment(assessment) {
+        console.log(assessment)
+
         this.setState({
-            [assessment.replace('2', '') + "Unlocked"]: true
+            // [assessment.replace('2', '') + "Unlocked"]: true
+            [assessment + "Unlocked"]: true
         }, () => {
-            console.log(this.state[assessment.replace('2', '') + "Unlocked"])
+            // console.log(this.state[assessment.replace('2', '') + "Unlocked"])
+            console.log(this.state[assessment + "Unlocked"])
         })
 
         if(assessment !== '2AFC') {
@@ -145,6 +144,7 @@ class Admin extends Component {
 
         this.socket.emit('connect-admin');
 
+        // Handle new user connection
         this.socket.on('new user', (user) => {
             if (user) {
                 let assessment = user.current_test
@@ -152,7 +152,7 @@ class Admin extends Component {
                 this.addRow(user, users)
 
                 // If admin has set tests to unlocked, then allow incoming users to access test right away
-                if(this.state[assessment.replace('2', '') + "Unlocked"] === true) {
+                if(this.state[assessment + "Unlocked"] === true) {
                     if(assessment !== '2AFC') {
                         this.socket.emit(`unlock ${assessment}`, {
                             timeLimit: this.state.timeLimit,
@@ -170,7 +170,7 @@ class Admin extends Component {
             }
         })
 
-        // Remove active connection event. Delete row and update count
+        // Remove active connection. Delete row and update count
         this.socket.on('remove user', (student) => {
             let countToUpdate;
 
@@ -292,11 +292,11 @@ class Admin extends Component {
 
                 <br />
 
-                <fieldset id="get-results">
+                {/* <fieldset id="get-results">
                     <legend>Get Results</legend>
 
                     <button onClick={() => displayResults('/test-display')}>Serve HTML</button>
-                </fieldset>
+                </fieldset> */}
 
                 <Table />
             </div >

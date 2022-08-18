@@ -2,6 +2,10 @@ import { Component } from 'react'
 
 import '../assets/loadingAnimation.css'
 
+/**
+ * Page for new users to login
+ */
+
 class LoginPage extends Component {
     constructor() {
         super();
@@ -16,7 +20,7 @@ class LoginPage extends Component {
     async submitForm(e) {
         e.preventDefault();
 
-        // Display loading animation
+        // Display loading animation while login is finalized
         let loader = document.getElementById('loader-wrapper')
         loader.style.visibility = "visible"
 
@@ -76,6 +80,7 @@ class LoginPage extends Component {
     }
 
     componentDidMount() {
+        // Check if student already has username
         fetch('/users/get-username')
             .then(res => {
                 if (res.ok) return res.json();

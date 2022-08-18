@@ -19,9 +19,6 @@ export class Timer extends Component {
         // and subtract from the TIME_LIMIT
         this.timeLeft = 0;
         this.timerInterval = null;
-
-        // this.timeLeft = TIME_LIMIT;
-        // this.timerInterval = null;
     }
 
 
@@ -102,10 +99,13 @@ export class Timer extends Component {
 
             let currentImage = document.getElementById("medical-scan")
 
+            // Blank out image after certain amount of seconds
             if (this.timeLeft <= WARNING_THRESHOLD) {
                 currentImage.style.visibility = "hidden"
             }
 
+            // Mark down question as having no answer if time runs out. 
+            // For rating, use the last selected rating scale value
             if (this.timeLeft === 0) {
                 if(page.props.assessment === "rating" && page.state.selectedValue !== null) {
                     page.processSelection(page.state.selectedValue)
@@ -118,10 +118,10 @@ export class Timer extends Component {
     }
 
     componentDidMount() {
-        // console.log(this.props.configInfo)
-
         TIME_LIMIT = this.props.configInfo.timeLimit
-        WARNING_THRESHOLD = TIME_LIMIT - this.props.configInfo.secondsVisible
+
+        // Keep image visible only as long as it's allowed to be
+        WARNING_THRESHOLD = TIME_LIMIT - this.props.configInfo.secondsVisible 
 
         this.timeLeft = TIME_LIMIT;
     }
