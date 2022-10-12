@@ -51,12 +51,12 @@ class AlternativeForcedChoice extends Component {
 
             // Get one image from the target absent images collection
             let absentIndex = random(0, absentImages.length - 1);
-            let absentImage = absentImages[absentIndex].default;
+            let absentImage = absentImages[absentIndex];
             absentImages.splice(absentIndex, 1);
 
             // Get another image from the target present images collection
             let presentIndex = random(0, presentImages.length - 1);
-            let presentImage = presentImages[presentIndex].default
+            let presentImage = presentImages[presentIndex]
             presentImages.splice(presentIndex, 1);
 
             var leftImage;

@@ -70,7 +70,7 @@ class Rating extends Component {
             solution = "No signal"
 
             let index = random(0, absentImages.length - 1);
-            image = absentImages[index].default
+            image = absentImages[index]
 
             absentImages.splice(index, 1);
         } else {
@@ -81,7 +81,7 @@ class Rating extends Component {
             solution = "Signal present"
 
             let index = random(0, presentImages.length - 1);
-            image = presentImages[index].default
+            image = presentImages[index]
 
             presentImages.splice(index, 1);
         }

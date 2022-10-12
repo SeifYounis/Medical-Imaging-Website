@@ -60,7 +60,7 @@
     "@testing-library/jest-dom": "^5.16.1",
     "@testing-library/react": "^11.2.7",
     "nodemon": "^2.0.15",
-    "react-scripts": "^4.0.3",
+    "react-scripts": "^5.0.1",
     "web-vitals": "^1.1.2",
     "ws": "^8.4.0"
   }

@@ -87,11 +87,13 @@ class TestingAndTraining extends Component {
             condition = random(0, 1);
         }
 
+        console.log(condition)
+
         if (condition === 0) {
             solution = "No signal"
 
             let index = random(0, absentImages.length - 1);
-            image = absentImages[index].default
+            image = absentImages[index]
 
             absentImages.splice(index, 1);
         } else {
@@ -102,9 +104,10 @@ class TestingAndTraining extends Component {
             solution = "Signal present"
 
             let index = random(0, presentImages.length - 1);
-            image = presentImages[index].default
 
-            let answerImage = presentAnswerImages[index].default
+            image = presentImages[index]
+
+            let answerImage = presentAnswerImages[index]
             this.setState({
                 answerImage: answerImage
             })
@@ -117,6 +120,8 @@ class TestingAndTraining extends Component {
             promptImage: image,
             solution: solution
         })
+
+        console.log(image)
 
         return image
     }
@@ -272,6 +277,8 @@ class TestingAndTraining extends Component {
         scoreboard.style.visibility = this.props.assessment === "training" ? "visible" : "hidden"
 
         document.getElementById('medical-scan').src = this.newImage()
+
+        console.log(document.getElementById('medical-scan').src)
 
         timer.startTimer(this);
     }
